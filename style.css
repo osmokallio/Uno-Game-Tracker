@@ -1,0 +1,214 @@
+/* General Styles */
+body {
+    font-family: sans-serif;
+    line-height: 1.6;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+h1, h2, h3, h4 {
+    color: #333;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+input[type="file"] {
+    width: calc(100% - 22px); /* Account for padding/border */
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding and border in the element's total width */
+}
+
+input[type="file"] {
+    padding: 3px; /* Less padding for file input */
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #5cb85c; /* Green */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s;
+    margin-right: 5px; /* Spacing between buttons */
+    margin-bottom: 5px;
+}
+
+button:hover {
+    background-color: #4cae4c;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Specific Button Colors */
+#download-csv-button { background-color: #337ab7; } /* Blue */
+#download-csv-button:hover { background-color: #286090; }
+#new-game-button { background-color: #f0ad4e; } /* Orange */
+#new-game-button:hover { background-color: #ec971f; }
+#toggle-stats-button { background-color: #5bc0de; } /* Light Blue */
+#toggle-stats-button:hover { background-color: #31b0d5; }
+#close-stats-button { background-color: #d9534f; } /* Red */
+#close-stats-button:hover { background-color: #c9302c; }
+
+
+/* Sections */
+#file-management-section,
+#player-setup-section,
+#starter-selection-section,
+#game-section,
+.stats-section /* Applied to stats-display-section */
+{
+    background-color: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Score Table */
+#score-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+#score-table th,
+#score-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+#score-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+#score-table tfoot td {
+    font-weight: bold;
+    background-color: #e9e9e9;
+}
+
+/* Score Input Area */
+#score-input-area {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+#score-input-area label {
+    display: inline-block;
+    width: 100px; /* Adjust as needed */
+    margin-right: 10px;
+    text-align: right;
+    vertical-align: middle;
+}
+
+#score-input-area input[type="number"] {
+    width: 80px; /* Smaller width for score inputs */
+    padding: 8px;
+    margin-bottom: 10px;
+    margin-right: 15px; /* Space between inputs */
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Messages */
+.error-message {
+    color: #a94442; /* Red */
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.status-message { /* For file load status etc. */
+    font-style: italic;
+    color: #31708f; /* Blue */
+    background-color: #d9edf7;
+    border: 1px solid #bce8f1;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+
+#game-over-message {
+    background-color: #dff0d8; /* Light green */
+    border: 1px solid #d6e9c6;
+    color: #3c763d;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 4px;
+}
+
+/* Chart Container */
+#chart-container {
+     background-color: #fff;
+     padding: 15px;
+     border-radius: 5px;
+     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Statistics Section Styles */
+#stats-display-section h3 { margin-top: 1.5em; font-size: 1.2em; }
+#stats-display-section h4 { margin-top: 1em; font-size: 1.1em; }
+
+#stats-display-section table { width: auto; min-width: 300px; border-collapse: collapse; margin-top: 15px; } /* Table styling within stats */
+#stats-display-section th,
+#stats-display-section td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; }
+#stats-display-section th { background-color: #f8f8f8; }
+#stats-display-section caption { caption-side: top; font-weight: bold; font-size: 1.1em; margin-bottom: 8px; text-align: left; }
+
+#stats-display-section ul {
+    list-style: disc;
+    margin-left: 20px;
+}
+#stats-display-section li {
+    margin-bottom: 5px;
+}
+
+#sessions-list > div,
+#games-list > div { /* Styling for individual session/game blocks */
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+#sessions-list > div:last-child,
+#games-list > div:last-child {
+     border-bottom: none; /* Remove border from last item */
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background-color: #ccc;
+    margin: 20px 0;
+}
+
+/* Utility */
+.hidden {
+    display: none;
+}
