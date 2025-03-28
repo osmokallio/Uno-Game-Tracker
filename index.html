@@ -10,16 +10,17 @@
 <body>
     <h1>Uno Pistelaskuri</h1>
 
-    <div id="file-management-section">
+    <div id="file-management-section" class="card">
         <h2>Tiedoston Hallinta & Tilastot</h2>
         <label for="csv-upload">Lataa aiempi pelitiedosto (CSV):</label>
         <input type="file" id="csv-upload" accept=".csv">
         <p id="load-status" class="status-message"></p>
         <button id="download-csv-button" disabled>Tallenna Kaikkien Pelien Pisteet (CSV)</button>
+        <small class="backup-note">Suositus: Tallenna tiedosto uudella nimellä (esim. päivämäärällä) varmuuskopiona.</small>
         <button id="toggle-stats-button" style="margin-left: 10px;">Näytä / Piilota Tilastot</button>
     </div>
 
-    <div id="player-setup-section">
+    <div id="player-setup-section" class="card">
         <h2>Aseta Pelaajat (tai lataa tiedosto)</h2>
         <p>Voit joko ladata aiemman pelitiedoston yllä olevasta napista (joka asettaa pelaajat automaattisesti) tai syöttää pelaajat alle.</p>
         <label for="player-names">Syötä pelaajien nimet pilkulla erotettuna:</label>
@@ -28,71 +29,117 @@
         <p id="setup-error" class="error-message" style="display: none;"></p>
     </div>
 
-    <div id="starter-selection-section" style="display: none;">
+    <div id="starter-selection-section" class="card" style="display: none;">
         <h2>Valitse Ensimmäinen Jakaja</h2>
         <label for="starting-player-select">Kuka jakaa ensimmäisen käden?</label>
         <select id="starting-player-select"></select>
         <button id="start-game-button">Aloita Peli</button>
     </div>
 
-    <div id="game-section" style="display: none;">
+    <div id="game-section" class="card" style="display: none;">
         <div id="game-info">
             <h3>Peli <span id="game-number"></span></h3>
-            <p>Kierros: <span id="current-round-number"></span></p>
-            <p>Jakaja: <span id="current-round-starter"></span></p>
+            <div class="round-info">
+                <span>Kierros: <span id="current-round-number"></span></span>
+                <span class="dealer-display">Jakaja: <strong id="current-round-starter">?</strong></span>
+            </div>
         </div>
 
         <h2>Pisteet</h2>
-        <table id="score-table">
-            <thead id="score-header"></thead>
-            <tbody id="score-body"></tbody>
-            <tfoot id="score-footer">
-                 <tr id="total-row"></tr>
-            </tfoot>
-        </table>
+        <div class="table-container">
+             <table id="score-table">
+                <thead id="score-header"></thead>
+                <tbody id="score-body"></tbody>
+                <tfoot id="score-footer">
+                     <tr id="total-row"></tr>
+                </tfoot>
+            </table>
+        </div>
 
         <div id="score-input-area">
             <h2>Syötä Kierroksen Pisteet</h2>
+            <div id="score-inputs-container">
+                </div>
             <button id="add-round-button">Lisää Kierroksen Pisteet</button>
             <p id="round-error" class="error-message" style="display: none;"></p>
         </div>
 
         <div id="game-over-message" style="display: none;">
-            <h2>Peli Päättyi!</h2>
-            <p id="winner-info"></p>
-        </div>
+            </div>
 
-         <div id="chart-container" style="display: none; max-width: 600px; margin-top: 20px;">
-             <h2>Pisteiden Kehitys</h2>
+         <div id="chart-container" style="display: none;">
+             <h2>Pisteiden Kehitys (nykyinen peli)</h2>
             <canvas id="scoreChartCanvas"></canvas>
         </div>
 
         <button id="new-game-button" style="display: none; margin-top: 15px;">Aloita Uusi Peli</button>
     </div>
 
-    <div id="stats-display-section" class="stats-section" style="display: none; margin-top: 20px;">
+    <div id="stats-display-section" class="card stats-section" style="display: none; margin-top: 20px;">
         <hr>
         <h2>Tilastot</h2>
+
+        <div id="stats-filters" class="stats-filters">
+             <h4>Suodata Tilastoja</h4>
+            <div class="filter-group">
+                <label for="filter-date-start">Alkupvm:</label>
+                <input type="date" id="filter-date-start">
+                <label for="filter-date-end">Loppupvm:</label>
+                <input type="date" id="filter-date-end">
+            </div>
+             <div class="filter-group">
+                 <label>Pelaajat:</label>
+                 <div id="filter-players-list">
+                     <small>(Kaikki pelaajat valittu)</small>
+                 </div>
+             </div>
+            <button id="apply-filters-button">Suodata</button>
+            <button id="reset-filters-button">Nollaa</button>
+        </div>
+        <hr>
+
         <div id="stats-content">
             <div id="stats-loading-message" style="display: none;">Lasketaan tilastoja...</div>
             <div id="stats-error-message" class="error-message" style="display: none;"></div>
 
             <div id="overall-stats" style="display: none;">
-                 <h3>Kokonaiskuva</h3>
-                 <p>Pelattuja pelejä yhteensä: <strong id="total-games"></strong></p>
-                 <h4>Voitot pelaajittain:</h4>
-                 <ul id="wins-per-player"></ul>
-                 <h4>Muita kokonaistilastoja:</h4>
-                 <ul id="other-overall-stats"></ul>
+                 <h3>Kokonaiskuva <small>(suodatettu)</small></h3>
+                 <p>Pelejä yhteensä: <strong id="total-games"></strong></p>
+                 <div class="stats-columns">
+                     <div>
+                         <h4>Voitot pelaajittain:</h4>
+                         <ul id="wins-per-player"></ul>
+                     </div>
+                     <div>
+                         <h4>Voittoputket (max):</h4>
+                         <ul id="win-streaks"></ul>
+                     </div>
+                 </div>
+                  <div class="stats-columns">
+                     <div>
+                         <h4>Keskinäiset Voitot (H2H):</h4>
+                         <div id="head-to-head-stats"></div>
+                     </div>
+                      <div>
+                         <h4>Parhaat/Huonoimmat Kierrokset:</h4>
+                         <ul id="hilo-rounds-stats"></ul>
+                     </div>
+                 </div>
+                  <div style="margin-top: 20px;">
+                    <h4>Voittojen Jakauma (Pylväsdiagrammi):</h4>
+                    <div class="chart-container-small">
+                         <canvas id="winsBarChartCanvas"></canvas>
+                     </div>
+                 </div>
             </div>
 
             <div id="session-stats" style="display: none;">
-                 <h3>Pelipäivät / Sessiot</h3>
+                 <h3>Pelipäivät / Sessiot <small>(suodatettu)</small></h3>
                  <div id="sessions-list"></div>
             </div>
 
             <div id="per-game-stats" style="display: none;">
-                 <h3>Pelikohtaiset Tiedot</h3>
+                 <h3>Pelikohtaiset Tiedot <small>(suodatettu)</small></h3>
                  <p>(Näytetään viimeisimmät ensin)</p>
                  <div id="games-list"></div>
             </div>
@@ -100,7 +147,6 @@
          <hr>
          <button id="close-stats-button" style="margin-top: 15px;">Piilota Tilastot</button>
     </div>
-
 
     <script src="script.js"></script>
 </body>
