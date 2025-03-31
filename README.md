@@ -1,106 +1,115 @@
 # Uno-Game-Tracker
 
-# Project Definition: Browser-Based Uno Score Tracker (CSV Persistent with Detailed Stats)
+# Project Definition: Browser-Based Uno Score Tracker (v3 - Enhanced)
 
 ## 1. Overview
 
-This project defines a client-side web application for tracking scores during games of classic Uno. The application allows users to input player names, record scores after each round (hand), automatically calculates totals, manages game progression according to specific rules (score limit, rotating dealer), and supports multiple games within a session.
+This project defines a significantly enhanced client-side web application for tracking scores during games of classic Uno. The application allows users to input player names, record scores after each round (hand) with **tracking of which player went out**, automatically calculates totals, manages game progression (score limit, **highlighted rotating dealer**), and supports multiple games within a session.
 
-It allows users to **export all recorded game data to a CSV file** at the end of a session and **import a previously saved CSV file** at the beginning of a new session to continue tracking history.
+Persistence between sessions relies on **manual CSV export/import**, now featuring **more robust validation** on import and a UI note recommending backups. The application includes user **confirmation dialogues** to prevent accidental data loss.
 
-The application features an **integrated, toggleable statistics section** displaying overall, per-session/day, and detailed per-game statistics based on the currently loaded data. The per-game view includes both final totals and a **round-by-round score breakdown**. A score progression graph for the *current* game is also displayed. The application runs entirely within the user's web browser using HTML, CSS, and JavaScript, requiring no server-side backend.
+A major feature is the **integrated, toggleable statistics section** which is now significantly expanded. It displays overall, per-session/day, and detailed per-game statistics (including **round-by-round scores with the round winner highlighted**). New statistics include **win streaks, highest/lowest scoring rounds, and player head-to-head records**. Basic **filtering by date and player** is implemented for the statistics view, complemented by a **bar chart visualizing total wins**.
+
+The UI incorporates **basic animations** for feedback and is designed with **CSS responsiveness** for better usability across different screen sizes. The application runs entirely within the user's web browser using HTML, CSS, and JavaScript, requiring no server-side backend.
 
 ## 2. Core Features
 
-* **Player Setup:** Allows users to define participating players manually *or* loads them automatically from an imported CSV file.
-* **CSV Data Import:** Allows users to load game history from a previously exported CSV file at the start of a session using a file input.
-* **Starting Player Selection:** Allows users to select which player deals the first hand of a *new* game.
-* **Round Score Entry:** Provides inputs for entering each player's score for a completed round.
-* **Automatic Totals:** Calculates and displays the cumulative score for each player for the current game.
-* **Rotating Dealer:** Automatically tracks and displays the dealer for the current round, rotating sequentially for subsequent rounds.
-* **Single Zero Score Validation:** Enforces the rule that exactly one player must score zero points in any given round.
-* **Game End Condition:** Automatically detects when a player's score reaches or exceeds 500 points, ending the current game.
-* **Winner Declaration:** Identifies and displays the player(s) with the lowest score when a game ends.
-* **Multiple Game Support:** Allows users to play and record multiple consecutive games within the same browser session, appending to any loaded CSV data.
-* **Score Progression Graph:** Displays a line chart (using Chart.js) showing each player's total score progression over the rounds of the *current* game.
-* **Integrated Statistics Display:**
-    * A toggleable section within the main page displays statistics calculated from *all* loaded data (`allGamesData` + `currentGameData` if active).
-    * Includes: Overall stats (total games, wins/player, win %, avg score/round), Session/Day stats (grouping games by end date), and detailed Per-Game summaries.
-    * **Per-Game Stats Detail:** Shows final scores with winner highlighting, **plus a separate table detailing the scores for every round/hand within that game.**
-* **CSV Data Export:** Generates and downloads a CSV file containing detailed score data for *all* games (loaded + current session), including timestamps for completed games. This is the primary method for data persistence between sessions.
-* **Dynamic UI Updates:** The user interface updates dynamically to reflect the current game state.
+* **Player Setup:** Define players manually or load automatically from imported CSV.
+* **CSV Data Import:** Load game history from a previously exported CSV file with improved format validation and error handling.
+* **CSV Data Export:** Export *all* current data (loaded + session) to a CSV file. Includes a UI note recommending manual backups. The CSV now includes data on which player went out each round.
+* **Starting Player Selection:** Select the dealer for the first hand of a new game.
+* **Round Score Entry & "Who Went Out" Tracking:** Enter scores per round; the application automatically identifies and stores which player scored 0 ("went out").
+* **Automatic Totals:** Calculates and displays cumulative scores for the current game.
+* **Rotating Dealer with Highlighting:** Tracks and visually highlights the current dealer.
+* **Single Zero Score Validation:** Enforces that exactly one player scores 0 per round.
+* **Game End Condition:** Detects game end when a player reaches/exceeds 500 points.
+* **Winner Declaration:** Identifies and displays the winner(s) of a completed game.
+* **Multiple Game Support:** Play multiple games per session, appending to loaded data.
+* **Confirmation Dialogs:** Prompts user before starting a new game if current is unfinished, and before loading a CSV if current session has potentially unsaved changes.
+* **Score Progression Graph:** Line chart showing score progression for the *current* game.
+* **Enhanced Integrated Statistics Display:**
+    * Toggleable section within the main page.
+    * **Calculated from currently loaded/played data.**
+    * **Filtering:** Basic filtering by date range and selected players.
+    * **Overall Stats:** Total games, wins/player (list & bar chart), max win streaks, highest/lowest scoring rounds (details), head-to-head win/loss records between players.
+    * **Session/Day Stats:** Groups completed games by date, showing games played and winner(s) of the day.
+    * **Per-Game Stats:** Detailed view including final scores and a table of **round-by-round scores showing who went out each round.**
+* **UI Feedback & Responsiveness:**
+    * Dealer highlighting.
+    * Subtle animations on score addition and game end.
+    * Improved layout adapting to different screen sizes via CSS media queries.
 
 ## 3. Technical Requirements
 
-* **Frontend:** HTML5, CSS3, JavaScript (ES6+)
+* **Frontend:** HTML5, CSS3 (with media queries), JavaScript (ES6+)
 * **Charting Library:** Chart.js (loaded via CDN)
-* **Environment:** Standard modern web browser (Chrome, Firefox, Edge, Safari) with JavaScript enabled.
-* **Dependencies:** Chart.js (external via CDN).
-* **Persistence:**
-    * Game data persists in JavaScript memory *during a single browser session*.
-    * Long-term persistence relies on **manual user export to CSV** and **manual user import from CSV** at the start of subsequent sessions.
+* **Environment:** Standard modern web browser with JavaScript enabled.
+* **Dependencies:** Chart.js.
+* **Persistence:** Manual CSV export/import supplemented by in-session JavaScript memory.
 
 ## 4. File Structure
 
-/uno-score-tracker/
-├── index.html     # Main HTML structure, game UI, and statistics display area
-├── style.css      # CSS for styling
-└── script.js      # JavaScript for application logic (gameplay, CSV handling, stats calculation)
-
-
 ## 5. Detailed Feature Breakdown (Highlights of Key Logic)
 
-* **Initialization (`initializeUI`):** Sets up the initial view, showing file import/player setup, hiding game and stats sections.
-* **CSV Import (`handleFileUpload`, `parseCsvData`):** Reads a user-selected CSV file, reconstructs `allGamesData`, `gameCounter`, and `players`. Handles the application's specific CSV format.
-* **Player Setup (`setupPlayers`, `populateStarterDropdown`):** Reads names manually *only if* no CSV was loaded.
-* **Start Game (`startGame`):** Initializes `currentGameData`, increments `gameCounter`, builds UI, initializes Chart.js.
-* **Add Round (`addRound`):** Reads/validates scores, updates `currentGameData`, updates UI table/totals/chart, checks game end, rotates dealer.
-* **End Game (`endGame`):** Marks game as over, records end time, determines/displays winner, disables inputs, adds/updates completed game in `allGamesData`.
-* **Start New Game (`startNewGame`):** Resets UI for a new game within the session (keeps `allGamesData`).
-* **CSV Export (`downloadCSV`, `generateCsvContent`):** Collects all data (`allGamesData` + `currentGameData`), sorts by game number, formats to CSV, triggers download. Includes BOM for Excel compatibility.
-* **Statistics (`toggleStatsDisplay`, `displayOverallStats_internal`, `displaySessionStats_internal`, `displayPerGameStats_internal`):**
-    * `toggleStatsDisplay` controls the visibility of the `#stats-display-section`.
-    * When shown, it gathers current data and calls calculation/display functions.
-    * `displayOverallStats_internal`: Calculates and displays total games, wins per player, win %, average scores.
-    * `displaySessionStats_internal`: Groups completed games by date (`gameEndTime`) and displays games played per day and winner(s) of the day (most game wins).
-    * `displayPerGameStats_internal`: For each game (loaded or played), displays:
-        * Game number and status.
-        * A table showing final total scores per player, highlighting the winner(s).
-        * **A second table showing the scores for each player for every round played in that specific game.**
+* **UI Initialization (`initializeUI`):** Sets initial visibility, resets flags and inputs.
+* **Confirmations (`confirmAction`, integrated into `startNewGame`, `handleFileUpload`):** Uses `window.confirm()` to ask the user before potentially losing unsaved session data.
+* **CSV Import (`handleFileUpload`, `parseCsvData`):**
+    * Includes confirmation dialog.
+    * `parseCsvData` now performs more checks (file length, expected columns based on header, numeric scores). Extracts player list, game data, round scores, and the **`roundWinners` index** (handling old formats). Throws more descriptive errors.
+* **CSV Export (`downloadCSV`, `generateCsvContent`):**
+    * Collects all data, sorts by game number.
+    * Includes the **`WentOutIndex` column** in the CSV output (saving -1 if data is missing).
+    * Includes UTF-8 BOM. UI includes backup recommendation text.
+* **Dealer Highlight (`updateRoundStarterDisplay`):** Adds/removes a `.highlight` CSS class to the dealer display element.
+* **"Who Went Out" Tracking (`addRound`):** Identifies the player index scoring 0 and stores it in `currentGameData.roundWinners`.
+* **Animations:** CSS classes (`.flash`, `.fade-in`) are briefly added/removed by JS (`addRound`, `endGame`) to trigger simple feedback animations defined in CSS.
+* **Responsiveness:** Primarily handled in `style.css` using `@media` queries to adjust layout, sizes, and visibility for smaller screens.
+* **Statistics (`toggleStatsDisplay`, `applyAndDisplayStats`, calculation functions):**
+    * `toggleStatsDisplay` shows/hides the main stats section.
+    * `applyAndDisplayStats` (called by toggle button and filter button):
+        * Reads filter values using `getStatsFilters`.
+        * Filters the combined game data using `applyFilters`.
+        * Calls calculation functions (`calculateWinCounts`, `calculateWinStreaks`, `calculateHiLoRounds`, `displayHeadToHead`) with filtered data.
+        * Calls display functions (`displayOverallStats_internal`, etc.) to populate the UI.
+        * Calls `createWinsBarChart` to generate the wins visualization based on filtered data.
+    * `displayPerGameStats_internal` now creates two tables: one for totals, one for rounds including **displaying the name of the player who went out** based on `game.roundWinners`.
+    * New calculation functions implemented for streaks, HiLo rounds, and H2H data.
 
 ## 6. Data Structures (JavaScript)
 
-* `players`: Array of strings. `['Alice', 'Bob', 'Charlie']`
-* `currentGameData`: Object representing the active game.
+* `players`: Array of strings.
+* `currentGameData` / `allGamesData` objects:
     ```javascript
     {
-        gameNumber: 3,
-        startingPlayer: 'Bob',
-        players: ['Alice', 'Bob', 'Charlie'],
-        rounds: [ [42, 0, 11], [10, 50, 0] ], // Array of arrays (scores per round)
-        totals: [52, 50, 11], // Array of numbers (cumulative scores)
-        isOver: false,
-        currentDealerIndex: 0,
-        gameEndTime: null // or timestamp string
+        gameNumber: number,
+        startingPlayer: string | null,
+        players: string[],
+        rounds: number[][],       // e.g., [[score1, score2], [score3, score4]]
+        roundWinners: number[],   // Index of player scoring 0 per round, e.g., [1, 0] (-1 if none/tie/missing)
+        totals: number[],
+        isOver: boolean,
+        currentDealerIndex: number,
+        gameEndTime: string | null
     }
     ```
-* `allGamesData`: Array holding `gameData` objects for all loaded and completed games.
-* `scoreChart`: Chart.js instance variable.
+* `scoreChart`: Chart.js instance (current game line chart).
+* `winsBarChart`: Chart.js instance (stats bar chart).
 * `gameCounter`: Number tracking the highest game number.
+* `unsavedChanges`: Boolean flag used for confirmation dialogs.
 
-## 7. CSV Export Format (Example)
+## 7. CSV Export Format (Example with new column)
 
 ```csv
 "Peli","1"
 "Pelin päättymisaika","28.3.2025, 10:30:00"
-"Kierros","Alice","Bob","Charlie"
-"1","15","0","55"
-"2","0","22","10"
-"3","102","30","0"
+"Kierros","Alice","Bob","Charlie","WentOutIndex"
+"1","15","0","55","1"
+"2","0","22","10","0"
+"3","102","30","0","2"
 "Yhteensä","117","52","65"
 
 "Peli","2"
 "Pelin päättymisaika","28.3.2025, 10:45:12"
-"Kierros","Alice","Bob","Charlie"
-"1","0","40","5"
+"Kierros","Alice","Bob","Charlie","WentOutIndex"
+"1","0","40","5","0"
 "Yhteensä","0","40","5"
