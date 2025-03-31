@@ -49,6 +49,11 @@ The UI incorporates **basic animations** for feedback and is designed with **CSS
 
 ## 4. File Structure
 
+/uno-score-tracker/
+├── index.html     # Main HTML structure, UI, stats display, filter controls, chart canvases
+├── style.css      # CSS including base styles, animations, highlighting, and media queries
+└── script.js      # JavaScript logic: gameplay, CSV handling, stats calc, filtering, confirmations, UI updates
+
 ## 5. Detailed Feature Breakdown (Highlights of Key Logic)
 
 * **UI Initialization (`initializeUI`):** Sets initial visibility, resets flags and inputs.
