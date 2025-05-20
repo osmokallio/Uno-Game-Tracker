@@ -189,15 +189,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentParsedGame.players = [...parsedPlayers];
                     currentParsedGame.totals = new Array(parsedPlayers.length).fill(0);
                     expectedColumns = parsedPlayers.length + 1; // Round num + players
-                    // Check for the new WentOutIndex column
-                    wentOutIndexCol = values.indexOf(WENT_OUT_INDEX_CSV_HEADER); // Find index, -1 if not found
-                     if (wentOutIndexCol !== -1) expectedColumns++; // Expect one more column if header exists
+                    // Locate the optional WentOutIndex column to skip during round parsing
+                    wentOutIndexCol = values.indexOf(WENT_OUT_INDEX_CSV_HEADER); // -1 if not found
+                    if (wentOutIndexCol !== -1) expectedColumns++; // Account for the extra column if present
                 } else if (currentParsedGame && /^\d+$/.test(values[0])) { // Round data row
                     if (values.length < expectedColumns) throw new Error(`Odotettiin ${expectedColumns} saraketta, löytyi ${values.length}.`);
                     if (currentParsedGame.players.length === 0) throw new Error("Pelaajia ei määritelty ennen kierrostietoja.");
 
-                    const roundScores = values.slice(1, currentParsedGame.players.length + 1).map(score => parseInt(score, 10));
-                    if (roundScores.some(isNaN)) throw new Error("Virheellisiä pistearvoja.");
+                    // Extract scores while skipping the WentOutIndex column
+                    const roundScores = [];
+                    values.slice(1).forEach((val, idx) => {
+                        if (wentOutIndexCol !== -1 && idx === wentOutIndexCol - 1) return; // skip WentOutIndex
+                        roundScores.push(parseInt(val, 10));
+                    });
+                    if (roundScores.length !== currentParsedGame.players.length || roundScores.some(isNaN)) {
+                        throw new Error("Virheellisiä pistearvoja.");
+                    }
 
                     currentParsedGame.rounds.push(roundScores);
                     roundScores.forEach((score, index) => { currentParsedGame.totals[index] += score; });
