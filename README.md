@@ -118,3 +118,4 @@ The UI incorporates **basic animations** for feedback and is designed with **CSS
 "Kierros","Alice","Bob","Charlie","WentOutIndex"
 "1","0","40","5","0"
 "Yhteensä","0","40","5"
+```
