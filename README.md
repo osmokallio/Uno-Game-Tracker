@@ -8,7 +8,7 @@ This project defines a significantly enhanced client-side web application for tr
 
 Persistence between sessions relies on **manual CSV export/import**, now featuring **more robust validation** on import and a UI note recommending backups. The application includes user **confirmation dialogues** to prevent accidental data loss.
 
-A major feature is the **integrated, toggleable statistics section** which is now significantly expanded. It displays overall, per-session/day, and detailed per-game statistics (including **round-by-round scores with the round winner highlighted**). New statistics include **win streaks, highest/lowest scoring rounds, and player head-to-head records**. Basic **filtering by date and player** is implemented for the statistics view, complemented by a **bar chart visualizing total wins**.
+A major feature is the **integrated, toggleable statistics section** which is now significantly expanded. It displays overall, per-session/day, and detailed per-game statistics (including **round-by-round scores with the round winner highlighted**). New statistics include **win streaks, longest streaks of individual hand wins, highest/lowest scoring rounds**, and player head-to-head records. Basic **filtering by date and player** is implemented for the statistics view, complemented by a **bar chart visualizing total wins**.
 
 The UI incorporates **basic animations** for feedback and is designed with **CSS responsiveness** for better usability across different screen sizes. The application runs entirely within the user's web browser using HTML, CSS, and JavaScript, requiring no server-side backend.
 
@@ -31,7 +31,7 @@ The UI incorporates **basic animations** for feedback and is designed with **CSS
     * Toggleable section within the main page.
     * **Calculated from currently loaded/played data.**
     * **Filtering:** Basic filtering by date range and selected players.
-    * **Overall Stats:** Total games, wins/player (list & bar chart), max win streaks, highest/lowest scoring rounds (details), head-to-head win/loss records between players.
+    * **Overall Stats:** Total games, wins/player (list & bar chart), max win streaks, counts of \*hand win streaks\* (\u22654), highest/lowest scoring rounds (details), and head-to-head win/loss records between players.
     * **Session/Day Stats:** Groups completed games by date, showing games played and winner(s) of the day.
     * **Per-Game Stats:** Detailed view including final scores and a table of **round-by-round scores showing who went out each round.**
 * **UI Feedback & Responsiveness:**

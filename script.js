@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const perGameStatsDisplay = document.getElementById('per-game-stats');
     const winsPerPlayerList = document.getElementById('wins-per-player');
     const winStreaksList = document.getElementById('win-streaks');
+    const roundWinStreaksList = document.getElementById('round-win-streaks');
+    const longestRoundStreakInfo = document.getElementById('longest-round-streak-info');
     const headToHeadStatsDiv = document.getElementById('head-to-head-stats');
     const hiloRoundsStatsList = document.getElementById('hilo-rounds-stats');
     const sessionsListDiv = document.getElementById('sessions-list');
@@ -703,8 +705,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(player){
                          playerScores[player] += score;
                          playerRoundsPlayed[player]++;
-                         // Check Hi/Lo (only if score is not 0?) - Let's count 0 too.
-                         if (score < bestRound.score) bestRound = { score, player, game: game.gameNumber, round: roundIndex + 1};
+                         // Check Hi/Lo (ignore 0 for best round)
+                         if (score > 0 && score < bestRound.score) bestRound = { score, player, game: game.gameNumber, round: roundIndex + 1};
                          if (score > worstRound.score) worstRound = { score, player, game: game.gameNumber, round: roundIndex + 1};
                     }
                 });
@@ -723,9 +725,22 @@ document.addEventListener('DOMContentLoaded', () => {
          // Win Streaks
         const streaks = calculateWinStreaks(games);
         winStreaksList.innerHTML = '';
-         sortedPlayersByWins.forEach(player => { // Sort by wins for consistency
+         sortedPlayersByWins.forEach(player => {
              winStreaksList.innerHTML += `<li>${player}: ${streaks[player] || 0}</li>`;
          });
+
+        const roundStreakData = calculateRoundWinStreaks(games, 4);
+        roundWinStreaksList.innerHTML = '';
+         sortedPlayersByWins.forEach(player => {
+             const count = roundStreakData.streakCounts[player] || 0;
+             const maxLen = roundStreakData.maxStreaks[player] || 0;
+             roundWinStreaksList.innerHTML += `<li>${player}: ${count} kpl (max ${maxLen})</li>`;
+         });
+        if (roundStreakData.global.player) {
+             longestRoundStreakInfo.textContent = `Pisin kierrosputki: ${roundStreakData.global.player} ${roundStreakData.global.length}`;
+        } else {
+             longestRoundStreakInfo.textContent = '';
+        }
 
 
         // Head-to-Head
@@ -911,9 +926,9 @@ document.addEventListener('DOMContentLoaded', () => {
                      const player = game.players[playerIndex];
                      const detail = `${score}p (${player}, P${game.gameNumber} K${roundIndex + 1})`;
 
-                     if (score < bestRound.score) {
+                     if (score > 0 && score < bestRound.score) {
                          bestRound = { score: score, details: [detail] };
-                     } else if (score === bestRound.score) {
+                     } else if (score > 0 && score === bestRound.score) {
                          bestRound.details.push(detail);
                      }
 
@@ -931,6 +946,54 @@ document.addEventListener('DOMContentLoaded', () => {
         if(worstRound.details.length > maxDetails) worstRound.details = worstRound.details.slice(0, maxDetails).concat(`...ja ${worstRound.details.length - maxDetails} muuta`);
 
         return { bestRound, worstRound };
+    }
+
+    function calculateRoundWinStreaks(games, threshold = 4) {
+        const currentStreaks = {};
+        const maxStreaks = {};
+        const streakCounts = {};
+        let globalPlayer = null;
+        let globalLength = 0;
+
+        const sortedGames = [...games].sort((a,b) => a.gameNumber - b.gameNumber);
+
+        sortedGames.forEach(game => {
+            if (!game.players || !game.roundWinners) return;
+
+            game.roundWinners.forEach(winnerIdx => {
+                game.players.forEach((p, i) => {
+                    if (!currentStreaks[p]) currentStreaks[p] = 0;
+                    if (!maxStreaks[p]) maxStreaks[p] = 0;
+                    if (!streakCounts[p]) streakCounts[p] = 0;
+                });
+
+                if (winnerIdx !== undefined && winnerIdx >= 0 && game.players[winnerIdx]) {
+                    const winner = game.players[winnerIdx];
+                    currentStreaks[winner]++;
+
+                    game.players.forEach((p, idx) => {
+                        if (idx !== winnerIdx) currentStreaks[p] = 0;
+                    });
+
+                    if (currentStreaks[winner] > maxStreaks[winner]) {
+                        maxStreaks[winner] = currentStreaks[winner];
+                    }
+
+                    if (currentStreaks[winner] === threshold) {
+                        streakCounts[winner]++;
+                    }
+
+                    if (currentStreaks[winner] > globalLength) {
+                        globalLength = currentStreaks[winner];
+                        globalPlayer = winner;
+                    }
+                } else {
+                    Object.keys(currentStreaks).forEach(p => currentStreaks[p] = 0);
+                }
+            });
+        });
+
+        return { maxStreaks, streakCounts, global: { player: globalPlayer, length: globalLength } };
     }
 
 
