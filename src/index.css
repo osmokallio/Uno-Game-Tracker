@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom utility classes for gameplay highlights */
+@layer utilities {
+  /* flash - brief background color animation for new rounds */
+  @keyframes flash-bg {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: theme('colors.yellow.200'); }
+  }
+  .flash {
+    animation: flash-bg 0.5s ease-in-out;
+  }
+
+  /* highlight - marks the current dealer */
+  .highlight {
+    @apply bg-yellow-300 font-semibold px-1 rounded;
+  }
+
+  /* went-out - highlights a cell when a player goes out */
+  .went-out {
+    @apply bg-green-200 font-semibold;
+  }
+}
