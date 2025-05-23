@@ -177,10 +177,11 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = evt => {
-      const lines = evt.target.result.trim().split(/\r?\n/);
-      const [, ...playerNames] = lines[0].split(',');
-      setPlayers(playerNames);
+      reader.onload = evt => {
+        const lines = evt.target.result.trim().split(/\r?\n/);
+        const [, ...headers] = lines[0].split(',').map(h => h.trim());
+        const playerNames = headers.filter(h => h !== 'WentOutIndex');
+        setPlayers(playerNames);
     };
     reader.readAsText(file);
   };
