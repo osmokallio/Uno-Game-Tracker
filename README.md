@@ -5,6 +5,9 @@
 ## 1. Overview
 
 This project defines a significantly enhanced client-side web application for tracking scores during games of classic Uno. The application allows users to input player names, record scores after each round (hand) with **tracking of which player went out**, automatically calculates totals, manages game progression (score limit, **highlighted rotating dealer**), and supports multiple games within a session.
+The project now uses React with a Vite build setup. Tailwind CSS provides styling and Chart.js is bundled via npm. The original vanilla implementation remains available for reference in `index_original.html`. Advanced features are progressively being ported.
+
+The previous vanilla JavaScript version remains in `index_original.html` with `script.js` for reference.
 
 Persistence between sessions relies on **manual CSV export/import**, now featuring **more robust validation** on import and a UI note recommending backups. The application includes user **confirmation dialogues** to prevent accidental data loss.
 
@@ -51,7 +54,7 @@ The UI incorporates **basic animations** for feedback and is designed with **CSS
 
 /uno-score-tracker/
 ├── index.html     # Main HTML structure, UI, stats display, filter controls, chart canvases
-├── style.css      # CSS including base styles, animations, highlighting, and media queries
+├── src/           # React source files and Tailwind styles
 └── script.js      # JavaScript logic: gameplay, CSV handling, stats calc, filtering, confirmations, UI updates
 
 ## 5. Detailed Feature Breakdown (Highlights of Key Logic)
@@ -68,7 +71,7 @@ The UI incorporates **basic animations** for feedback and is designed with **CSS
 * **Dealer Highlight (`updateRoundStarterDisplay`):** Adds/removes a `.highlight` CSS class to the dealer display element.
 * **"Who Went Out" Tracking (`addRound`):** Identifies the player index scoring 0 and stores it in `currentGameData.roundWinners`.
 * **Animations:** CSS classes (`.flash`, `.fade-in`) are briefly added/removed by JS (`addRound`, `endGame`) to trigger simple feedback animations defined in CSS.
-* **Responsiveness:** Primarily handled in `style.css` using `@media` queries to adjust layout, sizes, and visibility for smaller screens.
+* **Responsiveness:** Tailwind utility classes and responsive variants handle layout changes for different screen sizes.
 * **Statistics (`toggleStatsDisplay`, `applyAndDisplayStats`, calculation functions):**
     * `toggleStatsDisplay` shows/hides the main stats section.
     * `applyAndDisplayStats` (called by toggle button and filter button):
@@ -119,3 +122,17 @@ The UI incorporates **basic animations** for feedback and is designed with **CSS
 "1","0","40","5","0"
 "Yhteensä","0","40","5"
 ```
+
+## Development
+
+Install dependencies and start the dev server:
+```bash
+npm install
+npm run dev
+```
+Run tests and linter:
+```bash
+npm test
+npm run lint
+```
+
