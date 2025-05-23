@@ -136,3 +136,17 @@ npm test
 npm run lint
 ```
 
+## Deployment on GitHub Pages
+
+1. Set the `base` path in `vite.config.js` to your repository name (already
+   configured as `/Uno-Game-Tracker/`).
+2. Build the project:
+   ```bash
+   npm run build
+   ```
+3. Deploy the generated `dist/` directory to GitHub Pages (e.g. using the
+   `gh-pages` branch or a GitHub Actions workflow).
+
+Opening `index.html` directly from disk will not load the React code; it must be
+served from the built files or via the Vite dev server.
+
