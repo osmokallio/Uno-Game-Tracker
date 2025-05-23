@@ -76,8 +76,9 @@ function Game({ players, onReset }) {
     if (scores.some(v => isNaN(v) || v < 0)) return alert('Pisteiden on oltava numeroita');
     setRounds([...rounds, scores]);
     setInputs(players.map(() => ''));
-    const totals = totalsHistory[totalsHistory.length - 1];
-    if (totals.some(t => t >= SCORE_LIMIT)) setIsOver(true);
+    const newTotals = totalsHistory[totalsHistory.length - 1]
+      .map((t, i) => t + scores[i]);
+    if (newTotals.some(t => t >= SCORE_LIMIT)) setIsOver(true);
   };
 
   const downloadCsv = () => {
