@@ -5,9 +5,7 @@
 ## 1. Overview
 
 This project defines a significantly enhanced client-side web application for tracking scores during games of classic Uno. The application allows users to input player names, record scores after each round (hand) with **tracking of which player went out**, automatically calculates totals, manages game progression (score limit, **highlighted rotating dealer**), and supports multiple games within a session.
-The project now uses React with a Vite build setup. Tailwind CSS provides styling and Chart.js is bundled via npm. The original vanilla implementation remains available for reference in `index_original.html`. Advanced features are progressively being ported.
-
-The previous vanilla JavaScript version remains in `index_original.html` with `script.js` for reference.
+The application is provided as a **single HTML file (`index.html`)** that can be opened directly in any modern browser. Tailwind CSS and Chart.js are loaded from CDNs and all JavaScript logic is embedded directly in the file.
 
 Persistence between sessions relies on **manual CSV export/import**, now featuring **more robust validation** on import and a UI note recommending backups. The application includes user **confirmation dialogues** to prevent accidental data loss.
 
@@ -53,9 +51,7 @@ The UI incorporates **basic animations** for feedback and is designed with **CSS
 ## 4. File Structure
 
 /uno-score-tracker/
-├── index.html     # Main HTML structure, UI, stats display, filter controls, chart canvases
-├── src/           # React source files and Tailwind styles
-└── script.js      # JavaScript logic: gameplay, CSV handling, stats calc, filtering, confirmations, UI updates
+└── index.html     # Standalone HTML file containing markup, embedded JavaScript and external CDN links
 
 ## 5. Detailed Feature Breakdown (Highlights of Key Logic)
 
@@ -123,30 +119,8 @@ The UI incorporates **basic animations** for feedback and is designed with **CSS
 "Yhteensä","0","40","5"
 ```
 
-## Development
+## Usage
 
-Install dependencies and start the dev server:
-```bash
-npm install
-npm run dev
-```
-Run tests and linter:
-```bash
-npm test
-npm run lint
-```
-
-## Deployment on GitHub Pages
-
-1. Set the `base` path in `vite.config.js` to your repository name (already
-   configured as `/Uno-Game-Tracker/`).
-2. Build the project:
-   ```bash
-   npm run build
-   ```
-3. Deploy the generated `dist/` directory to GitHub Pages (e.g. using the
-   `gh-pages` branch or a GitHub Actions workflow).
-
-Opening `index.html` directly from disk will not load the React code; it must be
-served from the built files or via the Vite dev server.
+Simply open `index.html` in your web browser. No build step or additional
+dependencies are required.
 

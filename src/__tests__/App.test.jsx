@@ -1,8 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import React from 'react';
-import App from '../App.jsx';
+const fs = require('fs');
 
-test('renders setup heading', () => {
-  render(<App />);
-  expect(screen.getByText(/Aseta Pelaajat/i)).toBeInTheDocument();
+test('html contains setup heading', () => {
+  const html = fs.readFileSync('index.html', 'utf8');
+  expect(/Aseta Pelaajat/i.test(html)).toBe(true);
 });
