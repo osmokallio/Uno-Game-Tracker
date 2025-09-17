@@ -1042,6 +1042,72 @@
                 }
             });
 
+            // --- Touch-based Drag and Drop for Mobile ---
+            let draggedItem = null;
+
+            playerListEl.addEventListener('touchstart', (e) => {
+                const target = e.target.closest('.player-item');
+                // Allow dragging only if the game is not in progress and the drag handle is touched
+                if (target && !state.currentGame && e.target.closest('.drag-handle')) {
+                    dragStartIndex = parseInt(target.dataset.index);
+                    draggedItem = target;
+                    // Add dragging class with a slight delay to ensure the DOM has updated
+                    setTimeout(() => {
+                        if (draggedItem) draggedItem.classList.add('dragging');
+                    }, 0);
+                }
+            }, { passive: true });
+
+            playerListEl.addEventListener('touchmove', (e) => {
+                if (!draggedItem) return;
+
+                // Prevent screen scrolling while dragging an item
+                e.preventDefault();
+
+                const touch = e.touches[0];
+                const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+                const dropTarget = elementUnderTouch ? elementUnderTouch.closest('.player-item') : null;
+                
+                // Clear previous drop targets
+                document.querySelectorAll('.player-item').forEach(item => item.classList.remove('drag-over-target'));
+                
+                if (dropTarget && dropTarget !== draggedItem) {
+                    dropTarget.classList.add('drag-over-target');
+                }
+            }, { passive: false }); // Needs to be active to prevent default scroll
+
+            playerListEl.addEventListener('touchend', (e) => {
+                if (!draggedItem) return;
+
+                // Use the last touch position to find the drop target
+                const touch = e.changedTouches[0];
+                const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+                let dropTarget = elementUnderTouch ? elementUnderTouch.closest('.player-item') : null;
+                
+                // If dropTarget is null (e.g., finger lifted outside the list), try to find the last highlighted target
+                if (!dropTarget) {
+                    dropTarget = playerListEl.querySelector('.drag-over-target');
+                }
+
+                if (dropTarget) {
+                    const dropIndex = parseInt(dropTarget.dataset.index);
+                    if (dragStartIndex !== dropIndex) {
+                        // Reorder the players array
+                        const [removed] = state.players.splice(dragStartIndex, 1);
+                        state.players.splice(dropIndex, 0, removed);
+                        
+                        saveStateToLocalStorage();
+                        renderPlayers(); // Re-render to reflect the new order
+                    }
+                }
+                
+                // Cleanup styles
+                draggedItem.classList.remove('dragging');
+                document.querySelectorAll('.player-item').forEach(item => item.classList.remove('drag-over-target'));
+                draggedItem = null;
+            });
+
+
             // --- INITIALIZATION ---
             loadStateFromLocalStorage();
             renderPlayers();
@@ -1065,3 +1131,5 @@
     </script>
 </body>
 </html>
+
+
