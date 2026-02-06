@@ -46,11 +46,8 @@ JavaScript: For all the game logic, state management, and interactivity.
 
 Chart.js: For rendering the score progression and statistics charts.
 
-** Game Rules
+​
 
-Complete Updated Game Rules
-
-Here are all the Uno game rules this tracker enforces:​
 Basic Game Rules
 
     Player Requirements
