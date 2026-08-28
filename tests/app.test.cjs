@@ -222,6 +222,11 @@ test('opens and closes the statistics drawer without rebuilding it on filter cha
   inputs[1].value = '500';
   click(app, app.document.querySelector('#add-round-btn'));
 
+  assert.equal(app.document.body.classList.contains('game-complete'), true);
+  assert.equal(app.document.querySelector('#current-game-title').textContent, 'Game results');
+  assert.match(app.document.querySelector('.game-result-card').textContent, /Winner: Alice/);
+  assert.ok(app.document.querySelector('#play-again-btn'));
+
   const toggle = app.document.querySelector('#toggle-stats-btn');
   click(app, toggle);
   await new Promise(resolve => app.window.requestAnimationFrame(resolve));
@@ -242,6 +247,8 @@ test('opens and closes the statistics drawer without rebuilding it on filter cha
   assert.equal(app.document.querySelector('#stats-history-tab').getAttribute('aria-selected'), 'true');
   assert.equal(app.document.querySelector('#stats-summary-panel').hidden, true);
   assert.equal(app.document.querySelector('#stats-history-panel').hidden, false);
+  assert.match(app.document.querySelector('#game-history').textContent, /1 round/);
+  assert.doesNotMatch(app.document.querySelector('#game-history').textContent, /1 rounds/);
 
   click(app, app.document.querySelector('#close-stats-btn'));
   assert.equal(drawer.classList.contains('active'), false);
@@ -249,9 +256,31 @@ test('opens and closes the statistics drawer without rebuilding it on filter cha
   assert.equal(toggle.getAttribute('aria-expanded'), 'false');
   assert.equal(app.document.activeElement, toggle);
 
-  click(app, app.document.querySelector('#new-game-btn'));
+  click(app, app.document.querySelector('#play-again-btn'));
   click(app, app.document.querySelector('#dealer-options button'));
+  assert.equal(app.document.body.classList.contains('game-complete'), false);
+  assert.equal(app.document.querySelector('#current-game-title').textContent, 'Current Game');
   assert.equal(app.document.querySelector('#round-number').textContent, '1');
   assert.equal(app.document.querySelector('#current-dealer-name').textContent, 'Alice');
+  assert.deepEqual(app.errors, []);
+});
+
+test('returns from completed results to player editing without showing both views', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  addPlayer(app, 'Alice');
+  addPlayer(app, 'Bob');
+  startGame(app);
+  const inputs = app.document.querySelectorAll('.score-input');
+  inputs[0].value = '0';
+  inputs[1].value = '500';
+  click(app, app.document.querySelector('#add-round-btn'));
+  click(app, app.document.querySelector('#edit-players-btn'));
+
+  assert.equal(app.document.body.classList.contains('game-complete'), false);
+  assert.equal(app.document.querySelector('#game-area').classList.contains('hidden'), true);
+  assert.equal(app.document.querySelector('#new-player-name').disabled, false);
+  assert.equal(app.document.querySelector('#current-game-title').textContent, 'Current Game');
   assert.deepEqual(app.errors, []);
 });
