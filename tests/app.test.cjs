@@ -1,0 +1,179 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const test = require('node:test');
+const { JSDOM, VirtualConsole } = require('jsdom');
+
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+async function createApp(savedState) {
+  const errors = [];
+  const virtualConsole = new VirtualConsole();
+  virtualConsole.on('jsdomError', error => errors.push(error));
+
+  const dom = new JSDOM(html, {
+    url: 'https://uno.test/',
+    runScripts: 'dangerously',
+    pretendToBeVisual: true,
+    virtualConsole,
+    beforeParse(window) {
+      window.matchMedia = () => ({
+        matches: false,
+        addEventListener() {},
+        removeEventListener() {},
+      });
+      if (savedState !== undefined) {
+        window.localStorage.setItem('unoTrackerState', savedState);
+      }
+    },
+  });
+
+  await new Promise(resolve => dom.window.addEventListener('load', () => setTimeout(resolve, 0)));
+  return { dom, window: dom.window, document: dom.window.document, errors };
+}
+
+function click(app, element) {
+  element.dispatchEvent(new app.window.MouseEvent('click', { bubbles: true }));
+}
+
+function change(app, element) {
+  element.dispatchEvent(new app.window.Event('change', { bubbles: true }));
+}
+
+function addPlayer(app, name) {
+  app.document.querySelector('#new-player-name').value = name;
+  click(app, app.document.querySelector('#add-player-btn'));
+}
+
+function startGame(app) {
+  click(app, app.document.querySelector('#new-game-btn'));
+  click(app, app.document.querySelector('#dealer-options button'));
+}
+
+test('validates whole-number scores and preserves statistics filters', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  addPlayer(app, 'Alice');
+  addPlayer(app, 'A&B');
+  startGame(app);
+
+  let inputs = app.document.querySelectorAll('.score-input');
+  inputs[0].value = '0';
+  inputs[1].value = '1.5';
+  click(app, app.document.querySelector('#add-round-btn'));
+  assert.match(app.document.querySelector('#score-entry-error').textContent, /whole numbers/);
+  assert.equal(app.document.querySelector('#round-number').textContent, '1');
+
+  inputs[1].value = '500';
+  click(app, app.document.querySelector('#add-round-btn'));
+  click(app, app.document.querySelector('#toggle-stats-btn'));
+
+  const specialNameOption = [...app.document.querySelectorAll('#stats-player-filter option')]
+    .find(option => option.value === 'A&B');
+  assert.equal(specialNameOption.textContent, 'A&B');
+
+  let playerFilter = app.document.querySelector('#stats-player-filter');
+  playerFilter.value = 'A&B';
+  change(app, playerFilter);
+  playerFilter = app.document.querySelector('#stats-player-filter');
+  assert.equal(playerFilter.value, 'A&B');
+  assert.match(app.document.querySelector('#overall-stats').textContent, /Total Games Played \(in filter\): 1/);
+
+  const saved = JSON.parse(app.window.localStorage.getItem('unoTrackerState'));
+  assert.equal(saved.schemaVersion, 1);
+  const gameDate = new Date(saved.games[0].date);
+  const dateKey = [
+    gameDate.getFullYear(),
+    String(gameDate.getMonth() + 1).padStart(2, '0'),
+    String(gameDate.getDate()).padStart(2, '0'),
+  ].join('-');
+
+  let dateFilter = app.document.querySelector('#stats-date-filter');
+  dateFilter.value = dateKey;
+  change(app, dateFilter);
+  dateFilter = app.document.querySelector('#stats-date-filter');
+  assert.equal(dateFilter.value, dateKey);
+  assert.deepEqual(app.errors, []);
+});
+
+test('handles a __proto__ player name without corrupting scores', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  addPlayer(app, '__proto__');
+  addPlayer(app, 'Bob');
+  startGame(app);
+  const inputs = app.document.querySelectorAll('.score-input');
+  inputs[0].value = '0';
+  inputs[1].value = '500';
+  click(app, app.document.querySelector('#add-round-btn'));
+
+  const saved = JSON.parse(app.window.localStorage.getItem('unoTrackerState'));
+  assert.equal(saved.games[0].rounds[0].scores.__proto__, 0);
+  assert.equal(saved.games[0].finalScores[0].score, 0);
+  assert.deepEqual(app.errors, []);
+});
+
+test('migrates a one-player state and recovers from invalid storage', async t => {
+  const onePlayerState = JSON.stringify({ players: ['Solo'], games: [], currentGame: null });
+  const onePlayerApp = await createApp(onePlayerState);
+  t.after(() => onePlayerApp.dom.window.close());
+  assert.match(onePlayerApp.document.querySelector('#player-list').textContent, /Solo/);
+
+  const invalidApp = await createApp('{broken json');
+  t.after(() => invalidApp.dom.window.close());
+  assert.match(invalidApp.document.querySelector('#info-modal-message').textContent, /Saved data was invalid/);
+  assert.equal(invalidApp.window.localStorage.getItem('unoTrackerState'), null);
+  assert.equal(invalidApp.window.localStorage.getItem('unoTrackerStateInvalidBackup'), '{broken json');
+  assert.deepEqual(invalidApp.errors, []);
+});
+
+test('does not count co-winners as head-to-head wins', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  ['Alice', 'Bob', 'Charlie'].forEach(name => addPlayer(app, name));
+  startGame(app);
+  const inputs = app.document.querySelectorAll('.score-input');
+  inputs[0].value = '0';
+  inputs[1].value = '0';
+  inputs[2].value = '500';
+  click(app, app.document.querySelector('#add-round-btn'));
+  click(app, app.document.querySelector('#winner-options button'));
+  click(app, app.document.querySelector('#toggle-stats-btn'));
+
+  const aliceStats = [...app.document.querySelectorAll('#h2h-stats > div')]
+    .find(element => element.querySelector('strong').textContent.startsWith('Alice'));
+  assert.match(aliceStats.textContent, /Bob: 0W - 0L/);
+});
+
+test('normalizes imported totals instead of rendering imported HTML', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  const payload = {
+    players: ['Alice', 'Bob'],
+    games: [{
+      date: new Date().toISOString(),
+      players: ['Alice', 'Bob'],
+      winners: ['Alice'],
+      finalScores: [
+        { name: 'Alice', score: '<img src=x onerror=alert(1)>' },
+        { name: 'Bob', score: 500 },
+      ],
+      rounds: [{ winner: 'Alice', scores: { Alice: 0, Bob: 500 } }],
+    }],
+    currentGame: null,
+  };
+  const file = new app.window.File([JSON.stringify(payload)], 'scores.json', { type: 'application/json' });
+  const input = app.document.querySelector('#import-data-input');
+  Object.defineProperty(input, 'files', { value: [file], configurable: true });
+  change(app, input);
+  await new Promise(resolve => setTimeout(resolve, 20));
+
+  assert.equal(app.document.querySelectorAll('img').length, 0);
+  const imported = JSON.parse(app.window.localStorage.getItem('unoTrackerState'));
+  assert.equal(imported.games[0].finalScores[0].score, 0);
+  assert.equal(typeof imported.games[0].finalScores[0].score, 'number');
+});

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uno Score Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -51,7 +51,7 @@
         .drag-handle:active { cursor: grabbing; }
         .player-item.dragging { opacity: 0.5; }
         .player-item.drag-over-target { border-top: 2px solid #4f46e5; }
-        
+
         /* Dark Mode Styles */
         .dark body { background-color: #111827; }
         .dark .winner-highlight { background-color: #166534 !important; color: #dcfce7 !important; }
@@ -60,8 +60,10 @@
     </style>
     <script>
         // Tailwind dark mode plugin configuration
-        tailwind.config = {
-            darkMode: 'class',
+        if (window.tailwind) {
+            window.tailwind.config = {
+                darkMode: 'class',
+            };
         }
     </script>
 </head>
@@ -76,9 +78,9 @@
             </div>
             <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">Uno Score Tracker</h1>
             <p class="text-gray-600 dark:text-gray-400 mt-2">A modern way to keep track of your Uno games.</p>
-            
+
              <!-- Theme Toggle Button -->
-            <button id="theme-toggle" class="absolute top-0 right-0 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900">
+            <button id="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" class="absolute top-0 right-0 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900">
                 <svg id="theme-toggle-dark-icon" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                 <svg id="theme-toggle-light-icon" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
             </button>
@@ -86,7 +88,7 @@
 
         <!-- Main Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <!-- Left Column: Setup & Controls -->
             <div class="lg:col-span-1 space-y-6">
                 <!-- Player Setup -->
@@ -95,8 +97,9 @@
                     <div id="player-list" class="space-y-2 mb-4"></div>
                     <p class="text-xs text-gray-500 dark:text-gray-400 text-center -mt-2 mb-4">You can reorder players by dragging.</p>
                     <div class="flex space-x-2">
-                        <input type="text" id="new-player-name" placeholder="Enter player name" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
-                        <button id="add-player-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow">Add</button>
+                        <label for="new-player-name" class="sr-only">Player name</label>
+                        <input type="text" id="new-player-name" maxlength="50" autocomplete="off" placeholder="Enter player name" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+                        <button id="add-player-btn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow">Add</button>
                     </div>
                 </div>
 
@@ -104,22 +107,22 @@
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                     <h2 class="text-2xl font-semibold mb-4 border-b pb-2 dark:border-gray-600">Game Controls</h2>
                     <div class="grid grid-cols-1 gap-4">
-                        <button id="new-game-btn" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition duration-200 shadow font-semibold disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2" disabled>
+                        <button id="new-game-btn" type="button" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition duration-200 shadow font-semibold disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
                             <span>Start New Game</span>
                         </button>
-                        <button id="toggle-stats-btn" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition duration-200 shadow font-semibold flex items-center justify-center gap-2">
+                        <button id="toggle-stats-btn" type="button" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition duration-200 shadow font-semibold flex items-center justify-center gap-2">
                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm10 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
                             <span>Show Statistics</span>
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Data Management -->
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                     <h2 class="text-2xl font-semibold mb-4 border-b pb-2 dark:border-gray-600">Data Management</h2>
                      <div class="space-y-4">
-                        <button id="export-data-btn" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition duration-200 disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">
+                        <button id="export-data-btn" type="button" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition duration-200 disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             <span>Export Data (JSON)</span>
                         </button>
@@ -141,7 +144,7 @@
                     <h2 class="text-3xl font-bold mb-1 text-center">Current Game</h2>
                     <div id="game-status" class="text-center text-gray-600 dark:text-gray-400 mb-4">Round <span id="round-number">1</span>. Current Dealer: <span id="current-dealer-name" class="font-bold">N/A</span></div>
                     <div id="scoreboard" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"></div>
-                     <div class="mt-6">
+                     <div id="score-progression-chart-container" class="mt-6">
                          <canvas id="score-progression-chart"></canvas>
                      </div>
                 </div>
@@ -150,55 +153,55 @@
                     <h3 class="text-2xl font-semibold mb-4 text-center">Enter Round Scores</h3>
                     <div id="score-entry" class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center"></div>
                     <div id="round-controls" class="mt-6 flex justify-center items-center gap-4">
-                        <button id="undo-round-btn" class="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition duration-200 shadow-lg font-semibold disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">
+                        <button id="undo-round-btn" type="button" class="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition duration-200 shadow-lg font-semibold disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">
                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 01-16 0l-1.5-1.5M21 14H11a8 8 0 00-16 0l1.5 1.5" /></svg>
                             <span>Undo Last Round</span>
                         </button>
-                        <button id="add-round-btn" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-200 shadow-lg text-lg font-semibold flex items-center justify-center gap-2">
+                        <button id="add-round-btn" type="button" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-200 shadow-lg text-lg font-semibold flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                             <span>Submit Round</span>
                         </button>
                     </div>
-                    <p id="score-entry-error" class="text-red-500 text-center mt-4 h-5"></p>
+                    <p id="score-entry-error" role="alert" aria-live="polite" class="text-red-500 text-center mt-4 h-5"></p>
                 </div>
             </div>
         </div>
-        
+
         <!-- Statistics Section -->
         <div id="statistics-section" class="mt-8 hidden bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg"></div>
 
     </div>
 
     <!-- Modals -->
-    <div id="info-modal" class="modal-backdrop">
-        <div class="modal-content text-center bg-white dark:bg-gray-800">
+    <div id="info-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true" aria-describedby="info-modal-message" inert>
+        <div class="modal-content text-center bg-white dark:bg-gray-800" tabindex="-1">
             <p id="info-modal-message" class="mb-6 text-lg"></p>
-            <button id="info-modal-ok-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">OK</button>
+            <button id="info-modal-ok-btn" type="button" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">OK</button>
         </div>
     </div>
 
-    <div id="confirmation-modal" class="modal-backdrop">
-        <div class="modal-content bg-white dark:bg-gray-800">
+    <div id="confirmation-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title" aria-describedby="modal-message" inert>
+        <div class="modal-content bg-white dark:bg-gray-800" tabindex="-1">
             <h3 id="modal-title" class="text-xl font-bold mb-4">Confirmation</h3>
             <p id="modal-message" class="mb-6"></p>
             <div class="flex justify-end space-x-3">
-                <button id="modal-cancel-btn" class="bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition">Cancel</button>
-                <button id="modal-confirm-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">Confirm</button>
+                <button id="modal-cancel-btn" type="button" class="bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition">Cancel</button>
+                <button id="modal-confirm-btn" type="button" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">Confirm</button>
             </div>
         </div>
     </div>
 
-    <div id="winner-selection-modal" class="modal-backdrop">
-        <div class="modal-content bg-white dark:bg-gray-800">
-            <h3 class="text-xl font-bold mb-4">Select Round Winner</h3>
+    <div id="winner-selection-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="winner-selection-title" inert>
+        <div class="modal-content bg-white dark:bg-gray-800" tabindex="-1">
+            <h3 id="winner-selection-title" class="text-xl font-bold mb-4">Select Round Winner</h3>
             <p class="mb-6">Multiple players scored 0. Please select the player who went out.</p>
             <div id="winner-options" class="space-y-2"></div>
         </div>
     </div>
 
-    <div id="dealer-selection-modal" class="modal-backdrop">
-        <div class="modal-content bg-white dark:bg-gray-800">
-            <h3 class="text-xl font-bold mb-4">Select Starting Dealer</h3>
+    <div id="dealer-selection-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="dealer-selection-title" inert>
+        <div class="modal-content bg-white dark:bg-gray-800" tabindex="-1">
+            <h3 id="dealer-selection-title" class="text-xl font-bold mb-4">Select Starting Dealer</h3>
             <p class="mb-6">Who is dealing the first round?</p>
             <div id="dealer-options" class="space-y-2"></div>
         </div>
@@ -207,11 +210,22 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // STATE
-            let state = {
+            const STORAGE_KEY = 'unoTrackerState';
+            const INVALID_STORAGE_BACKUP_KEY = 'unoTrackerStateInvalidBackup';
+            const SCHEMA_VERSION = 1;
+            const MAX_PLAYER_NAME_LENGTH = 50;
+
+            const createEmptyState = () => ({
+                schemaVersion: SCHEMA_VERSION,
                 players: [],
-                games: [], 
+                games: [],
                 currentGame: null,
-            };
+            });
+
+            const createDictionary = () => Object.create(null);
+
+            let state = createEmptyState();
+            let statsFilters = { player: 'all', date: '' };
 
             // DOM ELEMENTS
             const playerListEl = document.getElementById('player-list');
@@ -232,11 +246,11 @@
             const importDataInput = document.getElementById('import-data-input');
             const toggleStatsBtn = document.getElementById('toggle-stats-btn');
             const statsSectionEl = document.getElementById('statistics-section');
-            
+
             // Chart instances
             let winsBarChart = null;
             let scoreProgressionChart = null;
-            
+
             // --- THEME TOGGLE LOGIC ---
             const themeToggleBtn = document.getElementById('theme-toggle');
             const darkIcon = document.getElementById('theme-toggle-dark-icon');
@@ -253,7 +267,13 @@
                     darkIcon.classList.add('hidden');
                     lightIcon.classList.remove('hidden');
                 }
-                localStorage.setItem('theme', theme);
+                try {
+                    localStorage.setItem('theme', theme);
+                } catch (error) {
+                    console.error('Unable to save theme preference:', error);
+                }
+                themeToggleBtn.setAttribute('aria-pressed', String(theme === 'dark'));
+                themeToggleBtn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
 
                 // Re-render charts with correct colors
                 if (state.currentGame) updateScoreProgressionChart();
@@ -266,6 +286,159 @@
 
             // --- SECURITY HELPER ---
             const escape = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+            function isValidScore(value) {
+                return Number.isSafeInteger(value) && value >= 0;
+            }
+
+            function normalizePlayerNames(value, fieldName = 'players', minimumPlayers = 2) {
+                if (!Array.isArray(value) || value.length < minimumPlayers) {
+                    throw new Error(`Invalid ${fieldName}: at least ${minimumPlayers} player${minimumPlayers === 1 ? '' : 's'} are required.`);
+                }
+
+                const names = value.map((name, index) => {
+                    if (typeof name !== 'string') {
+                        throw new Error(`Invalid ${fieldName}[${index}]: player name must be text.`);
+                    }
+                    const normalizedName = name.trim();
+                    if (!normalizedName || normalizedName.length > MAX_PLAYER_NAME_LENGTH) {
+                        throw new Error(`Invalid ${fieldName}[${index}]: player name must be 1-${MAX_PLAYER_NAME_LENGTH} characters.`);
+                    }
+                    return normalizedName;
+                });
+
+                const normalizedKeys = names.map(name => name.toLocaleLowerCase());
+                if (new Set(normalizedKeys).size !== names.length) {
+                    throw new Error(`Invalid ${fieldName}: duplicate player names are not allowed.`);
+                }
+                return names;
+            }
+
+            function normalizeRound(rawRound, playerNames, fieldName) {
+                if (!rawRound || typeof rawRound !== 'object' || Array.isArray(rawRound)) {
+                    throw new Error(`Invalid ${fieldName}: round must be an object.`);
+                }
+                if (!playerNames.includes(rawRound.winner)) {
+                    throw new Error(`Invalid ${fieldName}: winner is not one of the players.`);
+                }
+                if (!rawRound.scores || typeof rawRound.scores !== 'object' || Array.isArray(rawRound.scores)) {
+                    throw new Error(`Invalid ${fieldName}: scores must be an object.`);
+                }
+
+                const scores = createDictionary();
+                playerNames.forEach(playerName => {
+                    if (!Object.prototype.hasOwnProperty.call(rawRound.scores, playerName)) {
+                        throw new Error(`Invalid ${fieldName}: score for ${playerName} is missing.`);
+                    }
+                    const score = rawRound.scores[playerName];
+                    if (!isValidScore(score)) {
+                        throw new Error(`Invalid ${fieldName}: score for ${playerName} must be a non-negative whole number.`);
+                    }
+                    scores[playerName] = score;
+                });
+
+                if (scores[rawRound.winner] !== 0) {
+                    throw new Error(`Invalid ${fieldName}: the round winner must have zero points.`);
+                }
+                return { winner: rawRound.winner, scores };
+            }
+
+            function calculateScoresAndHistory(playerNames, rounds) {
+                const totals = createDictionary();
+                const histories = createDictionary();
+                playerNames.forEach(name => {
+                    totals[name] = 0;
+                    histories[name] = [0];
+                });
+                rounds.forEach(round => {
+                    playerNames.forEach(name => {
+                        totals[name] += round.scores[name];
+                        histories[name].push(totals[name]);
+                    });
+                });
+                return { totals, histories };
+            }
+
+            function normalizeCompletedGame(rawGame, gameIndex) {
+                if (!rawGame || typeof rawGame !== 'object' || Array.isArray(rawGame)) {
+                    throw new Error(`Invalid games[${gameIndex}]: game must be an object.`);
+                }
+                const players = normalizePlayerNames(rawGame.players, `games[${gameIndex}].players`);
+                if (!Array.isArray(rawGame.rounds) || rawGame.rounds.length === 0) {
+                    throw new Error(`Invalid games[${gameIndex}].rounds: at least one round is required.`);
+                }
+                const rounds = rawGame.rounds.map((round, roundIndex) =>
+                    normalizeRound(round, players, `games[${gameIndex}].rounds[${roundIndex}]`)
+                );
+                const parsedDate = new Date(rawGame.date);
+                if (typeof rawGame.date !== 'string' || Number.isNaN(parsedDate.getTime())) {
+                    throw new Error(`Invalid games[${gameIndex}].date.`);
+                }
+
+                const { totals } = calculateScoresAndHistory(players, rounds);
+                const minimumScore = Math.min(...players.map(name => totals[name]));
+                const winners = players.filter(name => totals[name] === minimumScore);
+                const finalScores = players.map(name => ({ name, score: totals[name] }));
+
+                return {
+                    date: parsedDate.toISOString(),
+                    players,
+                    winners,
+                    finalScores,
+                    rounds,
+                };
+            }
+
+            function normalizeCurrentGame(rawGame, statePlayers) {
+                if (rawGame === null || rawGame === undefined) return null;
+                if (!rawGame || typeof rawGame !== 'object' || Array.isArray(rawGame) || !Array.isArray(rawGame.players)) {
+                    throw new Error('Invalid currentGame.');
+                }
+
+                const playerNames = normalizePlayerNames(
+                    rawGame.players.map(player => player && player.name),
+                    'currentGame.players'
+                );
+                if (playerNames.length !== statePlayers.length || playerNames.some((name, index) => name !== statePlayers[index])) {
+                    throw new Error('Invalid currentGame: active players must match the player list.');
+                }
+                if (!Array.isArray(rawGame.rounds)) {
+                    throw new Error('Invalid currentGame.rounds.');
+                }
+                const rounds = rawGame.rounds.map((round, roundIndex) =>
+                    normalizeRound(round, playerNames, `currentGame.rounds[${roundIndex}]`)
+                );
+                if (!Number.isSafeInteger(rawGame.dealerIndex) || rawGame.dealerIndex < 0 || rawGame.dealerIndex >= playerNames.length) {
+                    throw new Error('Invalid currentGame.dealerIndex.');
+                }
+
+                const { totals, histories } = calculateScoresAndHistory(playerNames, rounds);
+                return {
+                    players: playerNames.map(name => ({ name, score: totals[name], scoreHistory: histories[name] })),
+                    rounds,
+                    dealerIndex: rawGame.dealerIndex,
+                };
+            }
+
+            function normalizeState(rawState) {
+                if (!rawState || typeof rawState !== 'object' || Array.isArray(rawState)) {
+                    throw new Error('Invalid file format: root value must be an object.');
+                }
+                if (!Array.isArray(rawState.players) || !Array.isArray(rawState.games)) {
+                    throw new Error("Invalid file format. Missing 'players' or 'games' array.");
+                }
+
+                const players = normalizePlayerNames(rawState.players, 'players', 0);
+                if (rawState.currentGame && players.length < 2) {
+                    throw new Error('Invalid currentGame: at least two players are required.');
+                }
+                return {
+                    schemaVersion: SCHEMA_VERSION,
+                    players,
+                    games: rawState.games.map(normalizeCompletedGame),
+                    currentGame: normalizeCurrentGame(rawState.currentGame, players),
+                };
+            }
 
             // --- MODALS ---
             const infoModal = document.getElementById('info-modal');
@@ -280,50 +453,70 @@
             const winnerOptionsEl = document.getElementById('winner-options');
             const dealerSelectionModal = document.getElementById('dealer-selection-modal');
             const dealerOptionsEl = document.getElementById('dealer-options');
-            
+
             let confirmCallback = null;
             let winnerSelectionCallback = null;
             let dealerSelectionCallback = null;
+            let previouslyFocusedElement = null;
+
+            function openModal(modal, focusSelector = 'button') {
+                previouslyFocusedElement = document.activeElement;
+                modal.inert = false;
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                requestAnimationFrame(() => modal.querySelector(focusSelector)?.focus());
+            }
+
+            function closeModal(modal) {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                modal.inert = true;
+                if (previouslyFocusedElement instanceof HTMLElement) previouslyFocusedElement.focus();
+                previouslyFocusedElement = null;
+            }
 
             function showInfoMessage(message) {
                 infoModalMessage.textContent = message;
-                infoModal.classList.add('active');
+                openModal(infoModal, '#info-modal-ok-btn');
             }
-            infoModalOkBtn.addEventListener('click', () => infoModal.classList.remove('active'));
+            infoModalOkBtn.addEventListener('click', () => closeModal(infoModal));
 
             function showConfirmation(title, message, onConfirm) {
                 modalTitle.textContent = title;
                 modalMessage.textContent = message;
                 confirmCallback = onConfirm;
-                confirmationModal.classList.add('active');
+                openModal(confirmationModal, '#modal-cancel-btn');
             }
 
             modalCancelBtn.addEventListener('click', () => {
-                confirmationModal.classList.remove('active');
+                closeModal(confirmationModal);
                 confirmCallback = null;
             });
 
             modalConfirmBtn.addEventListener('click', () => {
-                if (confirmCallback) confirmCallback();
-                confirmationModal.classList.remove('active');
+                const callback = confirmCallback;
                 confirmCallback = null;
+                closeModal(confirmationModal);
+                if (callback) callback();
             });
-            
+
             function showWinnerSelection(playersWithZero, onSelect) {
                 winnerOptionsEl.innerHTML = '';
                 winnerSelectionCallback = onSelect;
                 playersWithZero.forEach(playerName => {
                     const btn = document.createElement('button');
+                    btn.type = 'button';
                     btn.textContent = playerName;
                     btn.className = 'w-full text-left bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 p-3 rounded-lg hover:bg-blue-100';
                     btn.onclick = () => {
-                        winnerSelectionCallback(playerName);
-                        winnerSelectionModal.classList.remove('active');
+                        const callback = winnerSelectionCallback;
                         winnerSelectionCallback = null;
+                        closeModal(winnerSelectionModal);
+                        if (callback) callback(playerName);
                     };
                     winnerOptionsEl.appendChild(btn);
                 });
-                winnerSelectionModal.classList.add('active');
+                openModal(winnerSelectionModal);
             }
 
             function showDealerSelection(onSelect) {
@@ -331,17 +524,34 @@
                 dealerSelectionCallback = onSelect;
                 state.players.forEach((playerName, index) => {
                     const btn = document.createElement('button');
+                    btn.type = 'button';
                     btn.textContent = playerName;
                     btn.className = 'w-full text-left bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 p-3 rounded-lg hover:bg-blue-100';
                     btn.onclick = () => {
-                        dealerSelectionCallback(index);
-                        dealerSelectionModal.classList.remove('active');
+                        const callback = dealerSelectionCallback;
                         dealerSelectionCallback = null;
+                        closeModal(dealerSelectionModal);
+                        if (callback) callback(index);
                     };
                     dealerOptionsEl.appendChild(btn);
                 });
-                dealerSelectionModal.classList.add('active');
+                openModal(dealerSelectionModal);
             }
+
+            document.addEventListener('keydown', event => {
+                if (event.key !== 'Escape') return;
+                if (infoModal.classList.contains('active')) closeModal(infoModal);
+                else if (confirmationModal.classList.contains('active')) {
+                    confirmCallback = null;
+                    closeModal(confirmationModal);
+                } else if (winnerSelectionModal.classList.contains('active')) {
+                    winnerSelectionCallback = null;
+                    closeModal(winnerSelectionModal);
+                } else if (dealerSelectionModal.classList.contains('active')) {
+                    dealerSelectionCallback = null;
+                    closeModal(dealerSelectionModal);
+                }
+            });
 
 
             // --- CORE LOGIC ---
@@ -361,26 +571,30 @@
                     state.players.forEach((player, index) => {
                         const playerEl = document.createElement('div');
                         playerEl.className = 'player-item flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 rounded-lg';
-                        playerEl.draggable = !isGameInProgress;
                         playerEl.dataset.index = index;
-                        
+
                         const contentWrapper = document.createElement('div');
                         contentWrapper.className = 'flex items-center';
 
                         if (!isGameInProgress) {
-                            const handle = document.createElement('span');
+                            const handle = document.createElement('button');
+                            handle.type = 'button';
                             handle.className = 'drag-handle';
+                            handle.draggable = true;
+                            handle.setAttribute('aria-label', `Reorder ${player}`);
                             handle.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>`;
                             contentWrapper.appendChild(handle);
                         }
-                        
+
                         const nameSpan = document.createElement('span');
                         nameSpan.textContent = player;
                         contentWrapper.appendChild(nameSpan);
-                        
+
                         const removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
                         removeBtn.dataset.index = index;
                         removeBtn.className = 'remove-player-btn text-red-500 hover:text-red-700';
+                        removeBtn.setAttribute('aria-label', `Remove ${player}`);
                         removeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>`;
                         if (isGameInProgress) {
                             removeBtn.classList.add('hidden');
@@ -396,14 +610,24 @@
 
             function addPlayer() {
                 const name = newPlayerNameInput.value.trim();
-                if (name && !state.players.includes(name)) {
-                    state.players.push(name);
-                    newPlayerNameInput.value = '';
-                    renderPlayers();
-                    saveStateToLocalStorage();
+                if (!name) {
+                    showInfoMessage('Enter a player name.');
+                    return;
                 }
+                if (name.length > MAX_PLAYER_NAME_LENGTH) {
+                    showInfoMessage(`Player names can contain at most ${MAX_PLAYER_NAME_LENGTH} characters.`);
+                    return;
+                }
+                if (state.players.some(player => player.localeCompare(name, undefined, { sensitivity: 'base' }) === 0)) {
+                    showInfoMessage('That player has already been added.');
+                    return;
+                }
+                state.players.push(name);
+                newPlayerNameInput.value = '';
+                renderPlayers();
+                saveStateToLocalStorage();
             }
-            
+
             function removePlayer(index) {
                 state.players.splice(index, 1);
                 renderPlayers();
@@ -432,11 +656,11 @@
                         proceed(dealerIndex);
                      });
                 }
-                
+
                 if (state.currentGame && state.currentGame.rounds.length > 0) {
                    showConfirmation(
-                       'Start New Game?', 
-                       'A game is already in progress. Starting a new one will discard its progress. Are you sure?', 
+                       'Start New Game?',
+                       'A game is already in progress. Starting a new one will discard its progress. Are you sure?',
                        startAction
                    );
                 } else {
@@ -449,16 +673,16 @@
                     gameAreaEl.classList.add('hidden');
                     return;
                 }
-                
+
                 gameStatusEl.style.display = 'block';
                 roundNumberEl.textContent = state.currentGame.rounds.length + 1;
                 currentDealerNameEl.textContent = state.currentGame.players[state.currentGame.dealerIndex].name;
-                
+
                 scoreboardEl.innerHTML = '';
                 state.currentGame.players.forEach((player, index) => {
                     const card = document.createElement('div');
                     card.className = `p-4 rounded-lg shadow-sm border dark:border-gray-700 transition-all duration-300 ${index === state.currentGame.dealerIndex ? 'dealer-highlight' : 'bg-gray-50 dark:bg-gray-700/50'}`;
-                    
+
                     const nameDiv = document.createElement('div');
                     nameDiv.className = 'text-lg font-semibold';
                     nameDiv.textContent = player.name;
@@ -466,43 +690,47 @@
                     const scoreDiv = document.createElement('div');
                     scoreDiv.className = 'text-4xl font-bold';
                     scoreDiv.textContent = player.score;
-                    
+
                     card.append(nameDiv, scoreDiv);
                     scoreboardEl.appendChild(card);
                 });
 
                 scoreEntryEl.innerHTML = '';
-                state.currentGame.players.forEach(player => {
+                state.currentGame.players.forEach((player, index) => {
                     const inputGroup = document.createElement('div');
-                    
+
                     const label = document.createElement('label');
                     label.className = 'block text-center font-medium mb-1';
                     label.textContent = player.name;
 
                     const input = document.createElement('input');
                     input.type = 'number';
+                    input.id = `score-player-${index}`;
+                    label.htmlFor = input.id;
                     input.dataset.player = player.name;
                     input.className = 'score-input w-full p-2 border dark:border-gray-600 rounded-lg text-center bg-transparent';
                     input.min = '0';
+                    input.step = '1';
+                    input.inputMode = 'numeric';
 
                     inputGroup.append(label, input);
                     scoreEntryEl.appendChild(inputGroup);
                 });
-                
+
                 undoRoundBtn.disabled = state.currentGame.rounds.length === 0;
                 updateScoreProgressionChart();
             }
 
             function addRound() {
                 const inputs = [...scoreEntryEl.querySelectorAll('.score-input')];
-                const scores = {};
+                const scores = createDictionary();
                 let validationError = '';
                 let playersWithZero = [];
 
                 inputs.forEach(input => {
                     const playerName = input.dataset.player;
-                    const score = parseInt(input.value);
-                    if (isNaN(score) || score < 0) validationError = 'All scores must be a number of 0 or greater.';
+                    const score = input.value.trim() === '' ? Number.NaN : Number(input.value);
+                    if (!isValidScore(score)) validationError = 'All scores must be non-negative whole numbers.';
                     scores[playerName] = score;
                     if (score === 0) playersWithZero.push(playerName);
                 });
@@ -516,16 +744,16 @@
                     return;
                 }
                 scoreEntryErrorEl.textContent = '';
-                
+
                 const processRound = (winner) => {
                     const round = { winner, scores };
                     state.currentGame.rounds.push(round);
-                    
+
                     state.currentGame.players.forEach(player => {
                         player.score += scores[player.name];
                         player.scoreHistory.push(player.score);
                     });
-                    
+
                     const playersOver500 = state.currentGame.players.filter(p => p.score >= 500);
                     if (playersOver500.length > 0) {
                         endGame();
@@ -539,7 +767,7 @@
                     }
                     saveStateToLocalStorage();
                 };
-                
+
                 if (playersWithZero.length > 1) {
                     showWinnerSelection(playersWithZero, processRound);
                 } else {
@@ -549,16 +777,16 @@
 
             function undoLastRound() {
                 if (!state.currentGame || state.currentGame.rounds.length === 0) return;
-                
+
                 state.currentGame.rounds.pop();
-                
+
                 state.currentGame.players.forEach(player => {
                     player.scoreHistory.pop();
                     player.score = player.scoreHistory[player.scoreHistory.length - 1];
                 });
-                
+
                 state.currentGame.dealerIndex = (state.currentGame.dealerIndex - 1 + state.currentGame.players.length) % state.currentGame.players.length;
-                
+
                 renderGame();
                 saveStateToLocalStorage();
             }
@@ -575,7 +803,7 @@
                     finalScores: state.currentGame.players.map(p => ({name: p.name, score: p.score})),
                     rounds: state.currentGame.rounds
                 });
-                
+
                 gameStatusEl.innerHTML = '';
                 const winnerDiv = document.createElement('div');
                 winnerDiv.className = 'text-2xl font-bold text-green-600 dark:text-green-400 p-4 bg-green-100 dark:bg-green-900/50 rounded-lg text-center fade-in';
@@ -589,7 +817,7 @@
                  state.currentGame.players.forEach((player) => {
                     const card = document.createElement('div');
                     card.className = `p-4 rounded-lg shadow-sm border bg-gray-50 dark:bg-gray-700/50 dark:border-gray-700`;
-                    
+
                     const nameDiv = document.createElement('div');
                     nameDiv.className = 'text-lg font-semibold';
                     nameDiv.textContent = player.name;
@@ -597,7 +825,7 @@
                     const scoreDiv = document.createElement('div');
                     scoreDiv.className = 'text-4xl font-bold';
                     scoreDiv.textContent = player.score;
-                    
+
                     card.append(nameDiv, scoreDiv);
                     scoreboardEl.appendChild(card);
                 });
@@ -606,9 +834,9 @@
                     const playerName = state.currentGame.players[index].name;
                     if (winners.includes(playerName)) card.classList.add('winner-highlight');
                 });
-                
+
                 state.currentGame = null;
-                
+
                 renderPlayers();
                 if (!statsSectionEl.classList.contains('hidden')) calculateAndDisplayStats();
                 saveStateToLocalStorage();
@@ -617,16 +845,43 @@
 
             // --- DATA & STATE MANAGEMENT ---
             function saveStateToLocalStorage() {
-                localStorage.setItem('unoTrackerState', JSON.stringify(state));
+                state.schemaVersion = SCHEMA_VERSION;
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                    return true;
+                } catch (error) {
+                    console.error('Unable to save game state:', error);
+                    showInfoMessage('The game could not be saved in this browser. Export your data to avoid losing it.');
+                    return false;
+                }
             }
 
             function loadStateFromLocalStorage() {
-                const savedState = localStorage.getItem('unoTrackerState');
+                let savedState;
+                try {
+                    savedState = localStorage.getItem(STORAGE_KEY);
+                } catch (error) {
+                    console.error('Unable to access browser storage:', error);
+                    showInfoMessage('Browser storage is unavailable. Export your data before closing this page.');
+                    return;
+                }
                 if (savedState) {
-                    state = JSON.parse(savedState);
+                    try {
+                        state = normalizeState(JSON.parse(savedState));
+                    } catch (error) {
+                        console.error('Invalid saved state:', error);
+                        try {
+                            localStorage.setItem(INVALID_STORAGE_BACKUP_KEY, savedState);
+                        } catch (backupError) {
+                            console.error('Unable to preserve invalid saved state:', backupError);
+                        }
+                        localStorage.removeItem(STORAGE_KEY);
+                        state = createEmptyState();
+                        showInfoMessage('Saved data was invalid and could not be loaded. A recovery copy was preserved in this browser.');
+                    }
                 }
             }
-            
+
             function updateControlButtonsState() {
                 const hasData = state.players.length > 0 || state.games.length > 0;
                 exportDataBtn.disabled = !hasData;
@@ -649,17 +904,19 @@
             }
 
             function importData(event) {
-                 const file = event.target.files[0];
+                const file = event.target.files[0];
                 if (!file) return;
+                if (file.size > 2 * 1024 * 1024) {
+                    showInfoMessage('The import file is too large. The maximum size is 2 MB.');
+                    importDataInput.value = '';
+                    return;
+                }
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const importedState = JSON.parse(e.target.result);
-                        if (!importedState.players || !Array.isArray(importedState.players) || !importedState.games || !Array.isArray(importedState.games)) {
-                            throw new Error("Invalid file format. Missing 'players' or 'games' array.");
-                        }
-                        
+                        const importedState = normalizeState(JSON.parse(e.target.result));
+
                         const importAction = () => {
                             state = importedState;
                             if(!state.currentGame) state.currentGame = null;
@@ -676,9 +933,9 @@
                             showInfoMessage("Data imported successfully!");
                         };
 
-                        if (state.currentGame || (state.games.length > 0 && state.players.length > 0)) {
+                        if (state.currentGame || state.games.length > 0 || state.players.length > 0) {
                             showConfirmation(
-                                'Import Data?', 
+                                'Import Data?',
                                 'This will overwrite all current session data. Are you sure you want to proceed?',
                                 importAction
                             );
@@ -692,6 +949,10 @@
                         importDataInput.value = '';
                     }
                 };
+                reader.onerror = () => {
+                    showInfoMessage('The selected file could not be read.');
+                    importDataInput.value = '';
+                };
                 reader.readAsText(file);
             }
 
@@ -702,7 +963,7 @@
                     <div class="flex flex-wrap gap-4 justify-center mb-6">
                         <select id="stats-player-filter" class="p-2 border rounded-lg bg-transparent dark:border-gray-600"><option value="all">All Players</option></select>
                         <input type="date" id="stats-date-filter" class="p-2 border rounded-lg bg-transparent dark:border-gray-600">
-                        <button id="clear-filters-btn" class="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-lg">Clear Filters</button>
+                        <button id="clear-filters-btn" type="button" class="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-lg">Clear Filters</button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -722,26 +983,37 @@
                         <h3 class="text-xl font-semibold mb-3">Game History</h3>
                         <div id="game-history" class="space-y-6"></div>
                     </div>`;
-                
-                document.getElementById('stats-player-filter').addEventListener('change', calculateAndDisplayStats);
-                document.getElementById('stats-date-filter').addEventListener('change', calculateAndDisplayStats);
+
+                document.getElementById('stats-player-filter').addEventListener('change', event => {
+                    statsFilters.player = event.currentTarget.value;
+                    calculateAndDisplayStats();
+                });
+                document.getElementById('stats-date-filter').addEventListener('change', event => {
+                    statsFilters.date = event.currentTarget.value;
+                    calculateAndDisplayStats();
+                });
                 document.getElementById('clear-filters-btn').addEventListener('click', () => {
-                    document.getElementById('stats-player-filter').value = 'all';
-                    document.getElementById('stats-date-filter').value = '';
+                    statsFilters = { player: 'all', date: '' };
                     calculateAndDisplayStats();
                 });
             }
 
+            function getLocalDateKey(dateValue) {
+                const date = new Date(dateValue);
+                if (Number.isNaN(date.getTime())) return '';
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
             function getFilteredGames() {
-                const selectedPlayer = document.getElementById('stats-player-filter').value;
-                const selectedDate = document.getElementById('stats-date-filter').value;
-                
                 let filtered = state.games;
-                if (selectedPlayer !== 'all') {
-                    filtered = filtered.filter(game => game.players.includes(selectedPlayer));
+                if (statsFilters.player !== 'all') {
+                    filtered = filtered.filter(game => game.players.includes(statsFilters.player));
                 }
-                if (selectedDate) {
-                    filtered = filtered.filter(game => game.date.startsWith(selectedDate));
+                if (statsFilters.date) {
+                    filtered = filtered.filter(game => getLocalDateKey(game.date) === statsFilters.date);
                 }
                 return filtered;
             }
@@ -751,30 +1023,31 @@
                     statsSectionEl.innerHTML = '<h2 class="text-3xl font-bold mb-6 text-center">No completed games to show statistics for.</h2>';
                     return;
                 }
-                
+
                 renderStatsSkeleton();
 
-                const filteredGames = getFilteredGames();
                 const allPlayers = new Set();
                 state.games.forEach(g => g.players.forEach(p => allPlayers.add(p)));
 
                 const playerFilter = document.getElementById('stats-player-filter');
-                const currentSelection = playerFilter.value;
                 playerFilter.innerHTML = '<option value="all">All Players</option>';
                 allPlayers.forEach(player => {
                     const option = document.createElement('option');
-                    option.value = escape(player);
-                    option.textContent = escape(player);
+                    option.value = player;
+                    option.textContent = player;
                     playerFilter.appendChild(option);
                 });
-                 if (allPlayers.has(currentSelection)) playerFilter.value = currentSelection;
+                if (!allPlayers.has(statsFilters.player)) statsFilters.player = 'all';
+                playerFilter.value = statsFilters.player;
+                document.getElementById('stats-date-filter').value = statsFilters.date;
 
-                const winCounts = {};
+                const filteredGames = getFilteredGames();
+                const winCounts = createDictionary();
                 allPlayers.forEach(p => { winCounts[p] = 0; });
                 filteredGames.forEach(game => game.winners.forEach(winner => { if(winCounts[winner] !== undefined) winCounts[winner]++; }));
 
-                const allRounds = filteredGames.flatMap(game => 
-                    game.rounds.flatMap((round, roundIndex) => 
+                const allRounds = filteredGames.flatMap(game =>
+                    game.rounds.flatMap((round, roundIndex) =>
                         Object.entries(round.scores).map(([player, score]) => ({player, score}))
                     )
                 );
@@ -789,21 +1062,23 @@
             }
 
             function calculateAllTimeStats(allGames, allPlayers) {
-                const winStreaks = {};
-                const h2h = {};
+                const winStreaks = createDictionary();
+                const h2h = createDictionary();
                 allPlayers.forEach(p1 => {
                     winStreaks[p1] = { current: 0, max: 0 };
-                    h2h[p1] = {};
+                    h2h[p1] = createDictionary();
                     allPlayers.forEach(p2 => { if (p1 !== p2) h2h[p1][p2] = { win: 0, loss: 0 }; });
                 });
-                
-                allGames.forEach(game => {
+
+                [...allGames].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(game => {
                     allPlayers.forEach(player => {
                         if (game.players.includes(player)) {
                            if (game.winners.includes(player)) {
                                 winStreaks[player].current++;
                                 if (winStreaks[player].current > winStreaks[player].max) winStreaks[player].max = winStreaks[player].current;
-                                game.players.forEach(op => { if(player !== op) h2h[player][op].win++; });
+                                game.players.forEach(op => {
+                                    if (player !== op && !game.winners.includes(op)) h2h[player][op].win++;
+                                });
                             } else {
                                 winStreaks[player].current = 0;
                                 game.winners.forEach(winner => { if(h2h[player][winner]) h2h[player][winner].loss++; });
@@ -812,8 +1087,8 @@
                     });
                 });
 
-                const maxStreak = Object.entries(winStreaks).reduce((max, [player, data]) => 
-                    data.max > max.streak ? { player, streak: data.max } : max, 
+                const maxStreak = Object.entries(winStreaks).reduce((max, [player, data]) =>
+                    data.max > max.streak ? { player, streak: data.max } : max,
                     {player: 'N/A', streak: 0}
                 );
                 return { maxStreak, h2h };
@@ -828,7 +1103,7 @@
                     <ul class="list-disc pl-5">${rounds.map(r => `<li>${escape(r.player)}: ${r.score} points</li>`).join('') || '<li>N/A</li>'}</ul>
                     <p class="mt-2"><strong>Longest Win Streak (all time):</strong> ${escape(streak.player)} (${streak.streak} games)</p>`;
             }
-            
+
             function renderH2HStats(element, h2h) {
                 element.innerHTML = Object.entries(h2h).map(([p1, op]) => `
                     <div class="mb-2"><strong>${escape(p1)} vs:</strong><ul class="list-disc pl-5 text-sm">${Object.entries(op).map(([p2, r]) => `<li>${escape(p2)}: ${r.win}W - ${r.loss}L</li>`).join('')}</ul></div>
@@ -840,21 +1115,21 @@
                      element.innerHTML = '<p>No games match the current filters.</p>';
                      return;
                  }
-                const gamesByDate = games.reduce((acc, game) => {
-                    const date = new Date(game.date).toLocaleDateString('en-US');
+                const gamesByDate = [...games].sort((a, b) => new Date(b.date) - new Date(a.date)).reduce((acc, game) => {
+                    const date = new Date(game.date).toLocaleDateString();
                     if (!acc[date]) acc[date] = [];
                     acc[date].push(game);
                     return acc;
-                }, {});
-                
-                element.innerHTML = Object.entries(gamesByDate).reverse().map(([date, dateGames]) => `
+                }, createDictionary());
+
+                element.innerHTML = Object.entries(gamesByDate).map(([date, dateGames]) => `
                     <h4 class="text-lg font-semibold mt-4 border-b dark:border-gray-600 pb-1">Games on ${escape(date)}</h4>
                     ${dateGames.map((game, index) => `
                         <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg mt-2">
                             <details>
                                 <summary class="cursor-pointer font-medium">Game ${index + 1}: Winner - ${escape(game.winners.join(', '))}</summary>
                                 <div class="mt-4">
-                                    <p><strong>Final Scores:</strong> ${game.finalScores.map(s => `${escape(s.name)} (${s.score})`).join(', ')}</p>
+                                    <p><strong>Final Scores:</strong> ${game.finalScores.map(s => `${escape(s.name)} (${escape(s.score)})`).join(', ')}</p>
                                     <h5 class="font-semibold mt-3 mb-1">Round Details:</h5>
                                     <div class="overflow-x-auto">
                                         <table class="w-full text-center border-collapse dark:border-gray-600">
@@ -866,7 +1141,7 @@
                                             ${game.rounds.map((round, i) => `
                                                 <tr>
                                                     <td class="py-2 px-3 border dark:border-gray-600">${i + 1}</td>
-                                                    ${game.players.map(p => `<td class="py-2 px-3 border dark:border-gray-600 ${round.winner === p ? 'round-winner' : ''}">${round.scores[p] !== undefined ? round.scores[p] : 'N/A'}</td>`).join('')}
+                                                    ${game.players.map(p => `<td class="py-2 px-3 border dark:border-gray-600 ${round.winner === p ? 'round-winner' : ''}">${Object.prototype.hasOwnProperty.call(round.scores, p) ? escape(round.scores[p]) : 'N/A'}</td>`).join('')}
                                                 </tr>`).join('')}
                                             </tbody>
                                         </table>
@@ -877,7 +1152,7 @@
                     `).join('')}
                 `).join('');
             }
-            
+
             // --- CHART RENDERING (WITH DARK MODE SUPPORT) ---
             function getChartThemeColors() {
                 const isDarkMode = document.documentElement.classList.contains('dark');
@@ -890,11 +1165,16 @@
             function updateWinsChart(sortedWins) {
                 if (winsBarChart) winsBarChart.destroy();
                 const container = document.getElementById('wins-bar-chart-container');
+                if (!container) return;
+                if (typeof window.Chart === 'undefined') {
+                    container.innerHTML = '<p class="text-sm text-gray-500 text-center">Chart unavailable while the chart library is offline.</p>';
+                    return;
+                }
                 container.innerHTML = '<canvas id="wins-bar-chart"></canvas>';
                 const ctx = document.getElementById('wins-bar-chart').getContext('2d');
                 const themeColors = getChartThemeColors();
-                
-                winsBarChart = new Chart(ctx, {
+
+                winsBarChart = new window.Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: sortedWins.map(item => item[0]),
@@ -906,11 +1186,11 @@
                             borderWidth: 1
                         }]
                     },
-                    options: { 
+                    options: {
                         responsive: true, maintainAspectRatio: false,
-                        scales: { 
-                            y: { 
-                                beginAtZero: true, 
+                        scales: {
+                            y: {
+                                beginAtZero: true,
                                 ticks: { stepSize: 1, color: themeColors.textColor },
                                 grid: { color: themeColors.gridColor }
                             },
@@ -925,10 +1205,15 @@
                     }
                 });
             }
-            
+
             function updateScoreProgressionChart() {
                 if (scoreProgressionChart) scoreProgressionChart.destroy();
-                const container = document.getElementById('score-progression-chart').parentElement;
+                const container = document.getElementById('score-progression-chart-container');
+                if (!container) return;
+                if (typeof window.Chart === 'undefined') {
+                    container.innerHTML = '<p class="text-sm text-gray-500 text-center">Chart unavailable while the chart library is offline.</p>';
+                    return;
+                }
                 container.innerHTML = '<canvas id="score-progression-chart"></canvas>';
                 const chartCanvas = document.getElementById('score-progression-chart');
 
@@ -937,7 +1222,7 @@
                     return;
                 }
                 chartCanvas.style.display = 'block';
-                
+
                 const themeColors = getChartThemeColors();
                 const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
                 const datasets = state.currentGame.players.map((player, index) => ({
@@ -949,16 +1234,16 @@
                 }));
                 const labels = Array.from({ length: state.currentGame.rounds.length + 1 }, (_, i) => `R ${i}`);
 
-                scoreProgressionChart = new Chart(chartCanvas, {
+                scoreProgressionChart = new window.Chart(chartCanvas, {
                     type: 'line', data: { labels, datasets },
-                    options: { 
-                        responsive: true, 
-                        plugins: { 
-                            legend: { position: 'top', labels: { color: themeColors.textColor } }, 
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top', labels: { color: themeColors.textColor } },
                             title: { display: true, text: 'Score Progression', color: themeColors.textColor }
-                        }, 
-                        scales: { 
-                            y: { 
+                        },
+                        scales: {
+                            y: {
                                 beginAtZero: true,
                                 ticks: { color: themeColors.textColor },
                                 grid: { color: themeColors.gridColor }
@@ -976,11 +1261,24 @@
             // --- EVENT LISTENERS ---
             addPlayerBtn.addEventListener('click', addPlayer);
             newPlayerNameInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') addPlayer(); });
-            playerListEl.addEventListener('click', (e) => { 
+            playerListEl.addEventListener('click', (e) => {
                 const removeButton = e.target.closest('.remove-player-btn');
                 if(removeButton) {
                     removePlayer(parseInt(removeButton.dataset.index));
                 }
+            });
+            playerListEl.addEventListener('keydown', event => {
+                const handle = event.target.closest('.drag-handle');
+                if (!handle || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+                const playerItem = handle.closest('.player-item');
+                const index = Number(playerItem.dataset.index);
+                const targetIndex = event.key === 'ArrowUp' ? index - 1 : index + 1;
+                if (targetIndex < 0 || targetIndex >= state.players.length) return;
+                event.preventDefault();
+                [state.players[index], state.players[targetIndex]] = [state.players[targetIndex], state.players[index]];
+                saveStateToLocalStorage();
+                renderPlayers();
+                requestAnimationFrame(() => playerListEl.querySelector(`[data-index="${targetIndex}"] .drag-handle`)?.focus());
             });
             newGameBtn.addEventListener('click', startNewGame);
             addRoundBtn.addEventListener('click', addRound);
@@ -1036,7 +1334,7 @@
                     const dropIndex = parseInt(dropTarget.dataset.index);
                     const [removed] = state.players.splice(dragStartIndex, 1);
                     state.players.splice(dropIndex, 0, removed);
-                    
+
                     saveStateToLocalStorage();
                     renderPlayers();
                 }
@@ -1067,10 +1365,10 @@
                 const touch = e.touches[0];
                 const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
                 const dropTarget = elementUnderTouch ? elementUnderTouch.closest('.player-item') : null;
-                
+
                 // Clear previous drop targets
                 document.querySelectorAll('.player-item').forEach(item => item.classList.remove('drag-over-target'));
-                
+
                 if (dropTarget && dropTarget !== draggedItem) {
                     dropTarget.classList.add('drag-over-target');
                 }
@@ -1083,7 +1381,7 @@
                 const touch = e.changedTouches[0];
                 const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
                 let dropTarget = elementUnderTouch ? elementUnderTouch.closest('.player-item') : null;
-                
+
                 // If dropTarget is null (e.g., finger lifted outside the list), try to find the last highlighted target
                 if (!dropTarget) {
                     dropTarget = playerListEl.querySelector('.drag-over-target');
@@ -1095,14 +1393,20 @@
                         // Reorder the players array
                         const [removed] = state.players.splice(dragStartIndex, 1);
                         state.players.splice(dropIndex, 0, removed);
-                        
+
                         saveStateToLocalStorage();
                         renderPlayers(); // Re-render to reflect the new order
                     }
                 }
-                
+
                 // Cleanup styles
                 draggedItem.classList.remove('dragging');
+                document.querySelectorAll('.player-item').forEach(item => item.classList.remove('drag-over-target'));
+                draggedItem = null;
+            });
+
+            playerListEl.addEventListener('touchcancel', () => {
+                if (draggedItem) draggedItem.classList.remove('dragging');
                 document.querySelectorAll('.player-item').forEach(item => item.classList.remove('drag-over-target'));
                 draggedItem = null;
             });
@@ -1118,7 +1422,12 @@
             updateControlButtonsState();
 
             // Initialize theme on load
-            const savedTheme = localStorage.getItem('theme');
+            let savedTheme = null;
+            try {
+                savedTheme = localStorage.getItem('theme');
+            } catch (error) {
+                console.error('Unable to load theme preference:', error);
+            }
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             if (savedTheme) {
                 setTheme(savedTheme);
