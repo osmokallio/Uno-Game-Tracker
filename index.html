@@ -51,6 +51,43 @@
         .drag-handle:active { cursor: grabbing; }
         .player-item.dragging { opacity: 0.5; }
         .player-item.drag-over-target { border-top: 2px solid #4f46e5; }
+        .progress-track { background: #e5e7eb; }
+        .dark .progress-track { background: #374151; }
+        .statistics-backdrop {
+            position: fixed; inset: 0; z-index: 40;
+            background: rgba(17, 24, 39, 0.55);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .statistics-backdrop.active { opacity: 1; pointer-events: auto; }
+        .statistics-drawer {
+            position: fixed; top: 0; right: 0; z-index: 45;
+            width: min(100%, 56rem); height: 100vh; height: 100dvh;
+            overflow-y: auto; overscroll-behavior: contain;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            box-shadow: -12px 0 30px rgba(17, 24, 39, 0.22);
+        }
+        .statistics-drawer.active { transform: translateX(0); }
+        body.statistics-open { overflow: hidden; }
+        #live-stats-details > summary { list-style: none; }
+        #live-stats-details > summary::-webkit-details-marker { display: none; }
+        #live-stats-details > summary::after {
+            content: '\203A';
+            font-size: 1.5rem;
+            line-height: 1;
+            transform: rotate(90deg);
+            transition: transform 0.2s ease;
+        }
+        #live-stats-details[open] > summary::after { transform: rotate(-90deg); }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                scroll-behavior: auto !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
 
         /* Dark Mode Styles */
         .dark body { background-color: #111827; }
@@ -111,7 +148,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
                             <span>Start New Game</span>
                         </button>
-                        <button id="toggle-stats-btn" type="button" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition duration-200 shadow font-semibold flex items-center justify-center gap-2">
+                        <button id="toggle-stats-btn" type="button" aria-controls="statistics-section" aria-expanded="false" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition duration-200 shadow font-semibold flex items-center justify-center gap-2">
                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm10 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
                             <span>Show Statistics</span>
                         </button>
@@ -143,21 +180,55 @@
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
                     <h2 class="text-3xl font-bold mb-1 text-center">Current Game</h2>
                     <div id="game-status" class="text-center text-gray-600 dark:text-gray-400 mb-4">Round <span id="round-number">1</span>. Current Dealer: <span id="current-dealer-name" class="font-bold">N/A</span></div>
-                    <div id="scoreboard" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"></div>
-                     <div id="score-progression-chart-container" class="mt-6">
-                         <canvas id="score-progression-chart"></canvas>
-                     </div>
+                    <div id="game-summary" role="group" aria-label="Current game summary" aria-live="polite" class="grid grid-cols-3 gap-2 mb-4 text-center">
+                        <div class="rounded-lg bg-blue-50 dark:bg-blue-900/30 p-3">
+                            <span class="block text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Rounds</span>
+                            <strong id="summary-rounds" class="text-lg">0</strong>
+                        </div>
+                        <div class="rounded-lg bg-green-50 dark:bg-green-900/30 p-3 min-w-0">
+                            <span class="block text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Leader</span>
+                            <strong id="summary-leader" class="block text-lg truncate">N/A</strong>
+                        </div>
+                        <div class="rounded-lg bg-yellow-50 dark:bg-yellow-900/30 p-3">
+                            <span class="block text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Score gap</span>
+                            <strong id="summary-spread" class="text-lg">0</strong>
+                        </div>
+                    </div>
+                    <div id="scoreboard" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+                    <details id="live-stats-details" class="mt-6 border-t dark:border-gray-700 pt-4">
+                        <summary class="flex items-center justify-between gap-4 cursor-pointer rounded-lg px-3 py-2 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <span>Live comparison and score progression</span>
+                        </summary>
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="w-full text-sm text-left border-collapse">
+                                <thead class="text-xs uppercase text-gray-500 dark:text-gray-400">
+                                    <tr>
+                                        <th scope="col" class="py-2 px-2">Player</th>
+                                        <th scope="col" class="py-2 px-2 text-right">Score</th>
+                                        <th scope="col" class="py-2 px-2 text-right">Behind</th>
+                                        <th scope="col" class="py-2 px-2 text-right">Last</th>
+                                        <th scope="col" class="py-2 px-2 text-right">Wins</th>
+                                        <th scope="col" class="py-2 px-2 text-right">To 500</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="live-stats-table"></tbody>
+                            </table>
+                        </div>
+                        <div id="score-progression-chart-container" class="mt-6 min-h-48">
+                            <canvas id="score-progression-chart"></canvas>
+                        </div>
+                    </details>
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
                     <h3 class="text-2xl font-semibold mb-4 text-center">Enter Round Scores</h3>
                     <div id="score-entry" class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center"></div>
-                    <div id="round-controls" class="mt-6 flex justify-center items-center gap-4">
-                        <button id="undo-round-btn" type="button" class="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition duration-200 shadow-lg font-semibold disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">
+                    <div id="round-controls" class="mt-6 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
+                        <button id="undo-round-btn" type="button" class="w-full sm:w-auto bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition duration-200 shadow-lg font-semibold disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">
                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 01-16 0l-1.5-1.5M21 14H11a8 8 0 00-16 0l1.5 1.5" /></svg>
                             <span>Undo Last Round</span>
                         </button>
-                        <button id="add-round-btn" type="button" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-200 shadow-lg text-lg font-semibold flex items-center justify-center gap-2">
+                        <button id="add-round-btn" type="button" class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-200 shadow-lg text-lg font-semibold flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                             <span>Submit Round</span>
                         </button>
@@ -167,10 +238,21 @@
             </div>
         </div>
 
-        <!-- Statistics Section -->
-        <div id="statistics-section" class="mt-8 hidden bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg"></div>
-
     </div>
+
+    <div id="statistics-backdrop" class="statistics-backdrop" aria-hidden="true"></div>
+    <aside id="statistics-section" class="statistics-drawer bg-white dark:bg-gray-800" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="statistics-title" inert>
+        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur p-4 md:px-6">
+            <div>
+                <h2 id="statistics-title" class="text-2xl font-bold">Game Statistics</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Completed games and history</p>
+            </div>
+            <button id="close-stats-btn" type="button" aria-label="Close statistics" class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <div id="statistics-content" class="p-4 md:p-6"></div>
+    </aside>
 
     <!-- Modals -->
     <div id="info-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true" aria-describedby="info-modal-message" inert>
@@ -238,14 +320,19 @@
             const addRoundBtn = document.getElementById('add-round-btn');
             const undoRoundBtn = document.getElementById('undo-round-btn');
             const roundControlsEl = document.getElementById('round-controls');
-            const roundNumberEl = document.getElementById('round-number');
-            const currentDealerNameEl = document.getElementById('current-dealer-name');
             const scoreEntryErrorEl = document.getElementById('score-entry-error');
             const gameStatusEl = document.getElementById('game-status');
+            const summaryRoundsEl = document.getElementById('summary-rounds');
+            const summaryLeaderEl = document.getElementById('summary-leader');
+            const summarySpreadEl = document.getElementById('summary-spread');
+            const liveStatsTableEl = document.getElementById('live-stats-table');
             const exportDataBtn = document.getElementById('export-data-btn');
             const importDataInput = document.getElementById('import-data-input');
             const toggleStatsBtn = document.getElementById('toggle-stats-btn');
             const statsSectionEl = document.getElementById('statistics-section');
+            const statsContentEl = document.getElementById('statistics-content');
+            const statsBackdropEl = document.getElementById('statistics-backdrop');
+            const closeStatsBtn = document.getElementById('close-stats-btn');
 
             // Chart instances
             let winsBarChart = null;
@@ -277,7 +364,7 @@
 
                 // Re-render charts with correct colors
                 if (state.currentGame) updateScoreProgressionChart();
-                if (!statsSectionEl.classList.contains('hidden')) calculateAndDisplayStats();
+                if (statsSectionEl.classList.contains('active')) calculateAndDisplayStats();
             }
 
             themeToggleBtn.addEventListener('click', () => {
@@ -550,7 +637,7 @@
                 } else if (dealerSelectionModal.classList.contains('active')) {
                     dealerSelectionCallback = null;
                     closeModal(dealerSelectionModal);
-                }
+                } else if (statsSectionEl.classList.contains('active')) closeStatsDrawer();
             });
 
 
@@ -668,6 +755,101 @@
                 }
             }
 
+            function getLivePlayerStats() {
+                if (!state.currentGame) return [];
+                const leaderScore = Math.min(...state.currentGame.players.map(player => player.score));
+                const latestRound = state.currentGame.rounds[state.currentGame.rounds.length - 1];
+
+                return state.currentGame.players.map((player, index) => ({
+                    ...player,
+                    isLeader: player.score === leaderScore,
+                    isDealer: index === state.currentGame.dealerIndex,
+                    behindLeader: player.score - leaderScore,
+                    lastRoundScore: latestRound ? latestRound.scores[player.name] : 0,
+                    roundWins: state.currentGame.rounds.filter(round => round.winner === player.name).length,
+                    pointsTo500: Math.max(500 - player.score, 0),
+                }));
+            }
+
+            function renderLiveGameStats() {
+                const liveStats = getLivePlayerStats();
+                if (liveStats.length === 0) return;
+
+                const leaders = liveStats.filter(player => player.isLeader).map(player => player.name);
+                const scores = liveStats.map(player => player.score);
+                summaryRoundsEl.textContent = state.currentGame.rounds.length;
+                summaryLeaderEl.textContent = leaders.length === 1 ? leaders[0] : `Tie: ${leaders.join(', ')}`;
+                summaryLeaderEl.title = summaryLeaderEl.textContent;
+                summarySpreadEl.textContent = Math.max(...scores) - Math.min(...scores);
+
+                scoreboardEl.innerHTML = '';
+                liveStats.forEach(player => {
+                    const card = document.createElement('article');
+                    card.className = `live-player-card p-4 rounded-lg shadow-sm border dark:border-gray-700 transition-all duration-300 ${player.isDealer ? 'dealer-highlight' : 'bg-gray-50 dark:bg-gray-700/50'}`;
+                    card.dataset.player = player.name;
+
+                    const headingRow = document.createElement('div');
+                    headingRow.className = 'flex items-start justify-between gap-2';
+                    const nameDiv = document.createElement('h3');
+                    nameDiv.className = 'text-lg font-semibold break-words';
+                    nameDiv.textContent = player.name;
+                    const badges = document.createElement('div');
+                    badges.className = 'flex flex-wrap justify-end gap-1 text-xs';
+                    if (player.isLeader) {
+                        const leaderBadge = document.createElement('span');
+                        leaderBadge.className = 'leader-badge rounded-full bg-green-100 dark:bg-green-900/60 px-2 py-1 font-semibold text-green-700 dark:text-green-300';
+                        leaderBadge.textContent = 'Leader';
+                        badges.appendChild(leaderBadge);
+                    }
+                    if (player.isDealer) {
+                        const dealerBadge = document.createElement('span');
+                        dealerBadge.className = 'dealer-badge rounded-full bg-yellow-100 dark:bg-yellow-900/60 px-2 py-1 font-semibold text-yellow-700 dark:text-yellow-300';
+                        dealerBadge.textContent = 'Dealer';
+                        badges.appendChild(dealerBadge);
+                    }
+                    headingRow.append(nameDiv, badges);
+
+                    const scoreDiv = document.createElement('div');
+                    scoreDiv.className = 'player-total mt-3 text-4xl font-bold';
+                    scoreDiv.textContent = player.score;
+
+                    const progressLabel = document.createElement('div');
+                    progressLabel.className = 'mt-3 flex justify-between text-xs text-gray-500 dark:text-gray-400';
+                    progressLabel.innerHTML = `<span>Progress to 500</span><span>${player.score} / 500</span>`;
+                    const progressTrack = document.createElement('div');
+                    progressTrack.className = 'progress-track mt-1 h-2 overflow-hidden rounded-full';
+                    progressTrack.setAttribute('role', 'progressbar');
+                    progressTrack.setAttribute('aria-label', `${player.name} score progress`);
+                    progressTrack.setAttribute('aria-valuemin', '0');
+                    progressTrack.setAttribute('aria-valuemax', '500');
+                    progressTrack.setAttribute('aria-valuenow', String(Math.min(player.score, 500)));
+                    const progressFill = document.createElement('div');
+                    progressFill.className = `h-full rounded-full ${player.score >= 400 ? 'bg-red-500' : player.score >= 250 ? 'bg-yellow-500' : 'bg-blue-500'}`;
+                    progressFill.style.width = `${Math.min((player.score / 500) * 100, 100)}%`;
+                    progressTrack.appendChild(progressFill);
+
+                    const metrics = document.createElement('dl');
+                    metrics.className = 'mt-4 grid grid-cols-3 gap-2 border-t dark:border-gray-600 pt-3 text-center';
+                    metrics.innerHTML = `
+                        <div><dt class="text-xs text-gray-500 dark:text-gray-400">Last round</dt><dd class="last-round font-semibold">+${player.lastRoundScore}</dd></div>
+                        <div><dt class="text-xs text-gray-500 dark:text-gray-400">Round wins</dt><dd class="round-wins font-semibold">${player.roundWins}</dd></div>
+                        <div><dt class="text-xs text-gray-500 dark:text-gray-400">To 500</dt><dd class="points-to-500 font-semibold">${player.pointsTo500}</dd></div>`;
+
+                    card.append(headingRow, scoreDiv, progressLabel, progressTrack, metrics);
+                    scoreboardEl.appendChild(card);
+                });
+
+                liveStatsTableEl.innerHTML = liveStats.map(player => `
+                    <tr class="border-t border-gray-200 dark:border-gray-700 ${player.isLeader ? 'font-semibold' : ''}" data-player="${escape(player.name)}">
+                        <th scope="row" class="py-2 px-2">${escape(player.name)}${player.isLeader ? ' <span class="sr-only">(leader)</span>' : ''}</th>
+                        <td class="py-2 px-2 text-right">${player.score}</td>
+                        <td class="py-2 px-2 text-right">+${player.behindLeader}</td>
+                        <td class="py-2 px-2 text-right">+${player.lastRoundScore}</td>
+                        <td class="py-2 px-2 text-right">${player.roundWins}</td>
+                        <td class="py-2 px-2 text-right">${player.pointsTo500}</td>
+                    </tr>`).join('');
+            }
+
             function renderGame() {
                 if (!state.currentGame) {
                     gameAreaEl.classList.add('hidden');
@@ -675,25 +857,9 @@
                 }
 
                 gameStatusEl.style.display = 'block';
-                roundNumberEl.textContent = state.currentGame.rounds.length + 1;
-                currentDealerNameEl.textContent = state.currentGame.players[state.currentGame.dealerIndex].name;
+                gameStatusEl.innerHTML = `Round <span id="round-number">${state.currentGame.rounds.length + 1}</span>. Current Dealer: <span id="current-dealer-name" class="font-bold">${escape(state.currentGame.players[state.currentGame.dealerIndex].name)}</span>`;
 
-                scoreboardEl.innerHTML = '';
-                state.currentGame.players.forEach((player, index) => {
-                    const card = document.createElement('div');
-                    card.className = `p-4 rounded-lg shadow-sm border dark:border-gray-700 transition-all duration-300 ${index === state.currentGame.dealerIndex ? 'dealer-highlight' : 'bg-gray-50 dark:bg-gray-700/50'}`;
-
-                    const nameDiv = document.createElement('div');
-                    nameDiv.className = 'text-lg font-semibold';
-                    nameDiv.textContent = player.name;
-
-                    const scoreDiv = document.createElement('div');
-                    scoreDiv.className = 'text-4xl font-bold';
-                    scoreDiv.textContent = player.score;
-
-                    card.append(nameDiv, scoreDiv);
-                    scoreboardEl.appendChild(card);
-                });
+                renderLiveGameStats();
 
                 scoreEntryEl.innerHTML = '';
                 state.currentGame.players.forEach((player, index) => {
@@ -796,6 +962,9 @@
                 const winner = finalScores[0];
                 const winners = finalScores.filter(p => p.score === winner.score).map(p => p.name);
 
+                // Show the final round in the live cards, table, and chart before archiving the game.
+                renderGame();
+
                 state.games.push({
                     date: new Date().toISOString(),
                     players: state.currentGame.players.map(p => p.name),
@@ -813,32 +982,14 @@
                 scoreEntryEl.innerHTML = '';
                 roundControlsEl.classList.add('hidden');
 
-                scoreboardEl.innerHTML = '';
-                 state.currentGame.players.forEach((player) => {
-                    const card = document.createElement('div');
-                    card.className = `p-4 rounded-lg shadow-sm border bg-gray-50 dark:bg-gray-700/50 dark:border-gray-700`;
-
-                    const nameDiv = document.createElement('div');
-                    nameDiv.className = 'text-lg font-semibold';
-                    nameDiv.textContent = player.name;
-
-                    const scoreDiv = document.createElement('div');
-                    scoreDiv.className = 'text-4xl font-bold';
-                    scoreDiv.textContent = player.score;
-
-                    card.append(nameDiv, scoreDiv);
-                    scoreboardEl.appendChild(card);
-                });
-
-                scoreboardEl.childNodes.forEach((card, index) => {
-                    const playerName = state.currentGame.players[index].name;
-                    if (winners.includes(playerName)) card.classList.add('winner-highlight');
+                scoreboardEl.querySelectorAll('.live-player-card').forEach(card => {
+                    if (winners.includes(card.dataset.player)) card.classList.add('winner-highlight');
                 });
 
                 state.currentGame = null;
 
                 renderPlayers();
-                if (!statsSectionEl.classList.contains('hidden')) calculateAndDisplayStats();
+                if (statsSectionEl.classList.contains('active')) calculateAndDisplayStats();
                 saveStateToLocalStorage();
             }
 
@@ -928,7 +1079,7 @@
                             } else {
                                 gameAreaEl.classList.add('hidden');
                             }
-                            if (!statsSectionEl.classList.contains('hidden')) calculateAndDisplayStats();
+                            if (statsSectionEl.classList.contains('active')) calculateAndDisplayStats();
                             saveStateToLocalStorage();
                             showInfoMessage("Data imported successfully!");
                         };
@@ -958,11 +1109,12 @@
 
             // --- STATISTICS ---
             function renderStatsSkeleton() {
-                statsSectionEl.innerHTML = `
-                    <h2 class="text-3xl font-bold mb-6 text-center">Game Statistics</h2>
+                statsContentEl.innerHTML = `
                     <div class="flex flex-wrap gap-4 justify-center mb-6">
-                        <select id="stats-player-filter" class="p-2 border rounded-lg bg-transparent dark:border-gray-600"><option value="all">All Players</option></select>
-                        <input type="date" id="stats-date-filter" class="p-2 border rounded-lg bg-transparent dark:border-gray-600">
+                        <label class="sr-only" for="stats-player-filter">Filter statistics by player</label>
+                        <select id="stats-player-filter" aria-label="Filter statistics by player" class="p-2 border rounded-lg bg-transparent dark:border-gray-600"><option value="all">All Players</option></select>
+                        <label class="sr-only" for="stats-date-filter">Filter statistics by date</label>
+                        <input type="date" id="stats-date-filter" aria-label="Filter statistics by date" class="p-2 border rounded-lg bg-transparent dark:border-gray-600">
                         <button id="clear-filters-btn" type="button" class="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-lg">Clear Filters</button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -998,6 +1150,40 @@
                 });
             }
 
+            let statsDrawerPreviouslyFocused = null;
+
+            function openStatsDrawer() {
+                if (statsSectionEl.classList.contains('active')) return;
+                statsDrawerPreviouslyFocused = document.activeElement;
+                statsSectionEl.inert = false;
+                statsSectionEl.classList.add('active');
+                statsSectionEl.setAttribute('aria-hidden', 'false');
+                statsBackdropEl.classList.add('active');
+                statsBackdropEl.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('statistics-open');
+                toggleStatsBtn.setAttribute('aria-expanded', 'true');
+                toggleStatsBtn.querySelector('span').textContent = 'Hide Statistics';
+                calculateAndDisplayStats();
+                requestAnimationFrame(() => closeStatsBtn.focus());
+            }
+
+            function closeStatsDrawer() {
+                if (!statsSectionEl.classList.contains('active')) return;
+                statsSectionEl.classList.remove('active');
+                statsSectionEl.setAttribute('aria-hidden', 'true');
+                statsSectionEl.inert = true;
+                statsBackdropEl.classList.remove('active');
+                statsBackdropEl.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('statistics-open');
+                toggleStatsBtn.setAttribute('aria-expanded', 'false');
+                toggleStatsBtn.querySelector('span').textContent = 'Show Statistics';
+                const focusTarget = statsDrawerPreviouslyFocused instanceof HTMLElement && statsDrawerPreviouslyFocused !== document.body
+                    ? statsDrawerPreviouslyFocused
+                    : toggleStatsBtn;
+                focusTarget.focus();
+                statsDrawerPreviouslyFocused = null;
+            }
+
             function getLocalDateKey(dateValue) {
                 const date = new Date(dateValue);
                 if (Number.isNaN(date.getTime())) return '';
@@ -1020,11 +1206,16 @@
 
             function calculateAndDisplayStats() {
                 if (state.games.length === 0) {
-                    statsSectionEl.innerHTML = '<h2 class="text-3xl font-bold mb-6 text-center">No completed games to show statistics for.</h2>';
+                    if (winsBarChart) {
+                        winsBarChart.destroy();
+                        winsBarChart = null;
+                    }
+                    statsContentEl.innerHTML = '<p class="py-12 text-xl font-semibold text-center">No completed games to show statistics for.</p>';
                     return;
                 }
 
-                renderStatsSkeleton();
+                // Keep the drawer structure stable so filters, focus, and scroll position are preserved.
+                if (!document.getElementById('stats-player-filter')) renderStatsSkeleton();
 
                 const allPlayers = new Set();
                 state.games.forEach(g => g.players.forEach(p => allPlayers.add(p)));
@@ -1207,21 +1398,24 @@
             }
 
             function updateScoreProgressionChart() {
-                if (scoreProgressionChart) scoreProgressionChart.destroy();
+                if (scoreProgressionChart) {
+                    scoreProgressionChart.destroy();
+                    scoreProgressionChart = null;
+                }
                 const container = document.getElementById('score-progression-chart-container');
                 if (!container) return;
+                if (!state.currentGame || state.currentGame.rounds.length < 1) {
+                    container.classList.add('hidden');
+                    container.innerHTML = '';
+                    return;
+                }
+                container.classList.remove('hidden');
                 if (typeof window.Chart === 'undefined') {
                     container.innerHTML = '<p class="text-sm text-gray-500 text-center">Chart unavailable while the chart library is offline.</p>';
                     return;
                 }
                 container.innerHTML = '<canvas id="score-progression-chart"></canvas>';
                 const chartCanvas = document.getElementById('score-progression-chart');
-
-                if (!state.currentGame || state.currentGame.rounds.length < 1) {
-                    chartCanvas.style.display = 'none';
-                    return;
-                }
-                chartCanvas.style.display = 'block';
 
                 const themeColors = getChartThemeColors();
                 const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -1286,11 +1480,23 @@
             exportDataBtn.addEventListener('click', exportData);
             importDataInput.addEventListener('change', importData);
             toggleStatsBtn.addEventListener('click', () => {
-                const isHidden = statsSectionEl.classList.toggle('hidden');
-                toggleStatsBtn.querySelector('span').textContent = isHidden ? 'Show Statistics' : 'Hide Statistics';
-                if (!isHidden) {
-                     statsSectionEl.classList.add('fade-in');
-                     calculateAndDisplayStats();
+                if (statsSectionEl.classList.contains('active')) closeStatsDrawer();
+                else openStatsDrawer();
+            });
+            closeStatsBtn.addEventListener('click', closeStatsDrawer);
+            statsBackdropEl.addEventListener('click', closeStatsDrawer);
+            statsSectionEl.addEventListener('keydown', event => {
+                if (event.key !== 'Tab') return;
+                const focusable = [...statsSectionEl.querySelectorAll('button:not([disabled]), select:not([disabled]), input:not([disabled]), summary, [href], [tabindex]:not([tabindex="-1"])')];
+                if (focusable.length === 0) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
                 }
             });
 
