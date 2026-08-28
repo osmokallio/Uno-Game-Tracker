@@ -177,3 +177,74 @@ test('normalizes imported totals instead of rendering imported HTML', async t =>
   assert.equal(imported.games[0].finalScores[0].score, 0);
   assert.equal(typeof imported.games[0].finalScores[0].score, 'number');
 });
+
+test('shows live player metrics and a compact game summary after every round', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  addPlayer(app, 'Alice');
+  addPlayer(app, 'Bob');
+  startGame(app);
+
+  const inputs = app.document.querySelectorAll('.score-input');
+  inputs[0].value = '0';
+  inputs[1].value = '40';
+  click(app, app.document.querySelector('#add-round-btn'));
+
+  const aliceCard = app.document.querySelector('.live-player-card[data-player="Alice"]');
+  const bobCard = app.document.querySelector('.live-player-card[data-player="Bob"]');
+  assert.equal(app.document.querySelector('#summary-rounds').textContent, '1');
+  assert.equal(app.document.querySelector('#summary-leader').textContent, 'Alice');
+  assert.equal(app.document.querySelector('#summary-spread').textContent, '40');
+  assert.equal(aliceCard.querySelector('.leader-badge').textContent, 'Leader');
+  assert.equal(aliceCard.querySelector('.round-wins').textContent, '1');
+  assert.equal(bobCard.querySelector('.dealer-badge').textContent, 'Dealer');
+  assert.equal(bobCard.querySelector('.last-round').textContent, '+40');
+  assert.equal(bobCard.querySelector('.points-to-500').textContent, '460');
+  assert.equal(bobCard.querySelector('[role="progressbar"]').getAttribute('aria-valuenow'), '40');
+
+  const bobComparison = app.document.querySelector('#live-stats-table tr[data-player="Bob"]');
+  assert.match(bobComparison.textContent, /\+40/);
+  assert.deepEqual(app.errors, []);
+});
+
+test('opens and closes the statistics drawer without rebuilding it on filter changes', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  addPlayer(app, 'Alice');
+  addPlayer(app, 'Bob');
+  startGame(app);
+  const inputs = app.document.querySelectorAll('.score-input');
+  inputs[0].value = '0';
+  inputs[1].value = '500';
+  click(app, app.document.querySelector('#add-round-btn'));
+
+  const toggle = app.document.querySelector('#toggle-stats-btn');
+  click(app, toggle);
+  await new Promise(resolve => app.window.requestAnimationFrame(resolve));
+
+  const drawer = app.document.querySelector('#statistics-section');
+  assert.equal(drawer.classList.contains('active'), true);
+  assert.equal(drawer.getAttribute('aria-hidden'), 'false');
+  assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+  assert.equal(app.document.activeElement.id, 'close-stats-btn');
+
+  const overallStats = app.document.querySelector('#overall-stats');
+  const playerFilter = app.document.querySelector('#stats-player-filter');
+  playerFilter.value = 'Alice';
+  change(app, playerFilter);
+  assert.equal(app.document.querySelector('#overall-stats'), overallStats);
+
+  click(app, app.document.querySelector('#close-stats-btn'));
+  assert.equal(drawer.classList.contains('active'), false);
+  assert.equal(drawer.getAttribute('aria-hidden'), 'true');
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+  assert.equal(app.document.activeElement, toggle);
+
+  click(app, app.document.querySelector('#new-game-btn'));
+  click(app, app.document.querySelector('#dealer-options button'));
+  assert.equal(app.document.querySelector('#round-number').textContent, '1');
+  assert.equal(app.document.querySelector('#current-dealer-name').textContent, 'Alice');
+  assert.deepEqual(app.errors, []);
+});
