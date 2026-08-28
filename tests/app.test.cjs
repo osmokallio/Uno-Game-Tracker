@@ -78,7 +78,7 @@ test('validates whole-number scores and preserves statistics filters', async t =
   change(app, playerFilter);
   playerFilter = app.document.querySelector('#stats-player-filter');
   assert.equal(playerFilter.value, 'A&B');
-  assert.match(app.document.querySelector('#overall-stats').textContent, /Total Games Played \(in filter\): 1/);
+  assert.match(app.document.querySelector('#overall-stats').textContent, /Games1/);
 
   const saved = JSON.parse(app.window.localStorage.getItem('unoTrackerState'));
   assert.equal(saved.schemaVersion, 1);
@@ -143,9 +143,8 @@ test('does not count co-winners as head-to-head wins', async t => {
   click(app, app.document.querySelector('#winner-options button'));
   click(app, app.document.querySelector('#toggle-stats-btn'));
 
-  const aliceStats = [...app.document.querySelectorAll('#h2h-stats > div')]
-    .find(element => element.querySelector('strong').textContent.startsWith('Alice'));
-  assert.match(aliceStats.textContent, /Bob: 0W - 0L/);
+  const aliceStats = app.document.querySelector('.h2h-player-row[data-player="Alice"]');
+  assert.equal(aliceStats.querySelectorAll('td')[1].textContent, '0–0');
 });
 
 test('normalizes imported totals instead of rendering imported HTML', async t => {
@@ -189,10 +188,13 @@ test('shows live player metrics and a compact game summary after every round', a
   const inputs = app.document.querySelectorAll('.score-input');
   inputs[0].value = '0';
   inputs[1].value = '40';
-  click(app, app.document.querySelector('#add-round-btn'));
+  inputs[0].dispatchEvent(new app.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
   const aliceCard = app.document.querySelector('.live-player-card[data-player="Alice"]');
   const bobCard = app.document.querySelector('.live-player-card[data-player="Bob"]');
+  assert.equal(app.document.body.classList.contains('game-active'), true);
+  assert.equal(app.document.querySelector('#score-entry'), null);
+  assert.ok(aliceCard.querySelector('.round-score-entry .score-input'));
   assert.equal(app.document.querySelector('#summary-rounds').textContent, '1');
   assert.equal(app.document.querySelector('#summary-leader').textContent, 'Alice');
   assert.equal(app.document.querySelector('#summary-spread').textContent, '40');
@@ -235,6 +237,11 @@ test('opens and closes the statistics drawer without rebuilding it on filter cha
   playerFilter.value = 'Alice';
   change(app, playerFilter);
   assert.equal(app.document.querySelector('#overall-stats'), overallStats);
+
+  click(app, app.document.querySelector('#stats-history-tab'));
+  assert.equal(app.document.querySelector('#stats-history-tab').getAttribute('aria-selected'), 'true');
+  assert.equal(app.document.querySelector('#stats-summary-panel').hidden, true);
+  assert.equal(app.document.querySelector('#stats-history-panel').hidden, false);
 
   click(app, app.document.querySelector('#close-stats-btn'));
   assert.equal(drawer.classList.contains('active'), false);

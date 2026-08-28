@@ -6,7 +6,9 @@ Player Management: Easily add, remove, and reorder players before starting a gam
 
 Real-time Scorekeeping: Enter scores for each player at the end of a round, and the totals are updated automatically.
 
-Live Game Dashboard: Player cards show the leader, dealer, latest round score, round wins, and progress toward 500 points. An expandable comparison table and score chart provide more detail without crowding the main view.
+Focused Live Game: Starting a game gives the scoreboard the full width of the app. Each player card combines the live total, round input, rank, dealer and leader status, latest result, round wins, and a color-coded 500-point risk meter.
+
+Fast Round Entry: Save a round directly from the player cards with Enter or the sticky action bar, which stays within thumb reach on mobile.
 
 Dealer Tracking: The dealer role automatically rotates to the next player after each round.
 
@@ -20,7 +22,9 @@ Data Portability: Export your entire game history and player list to a JSON file
 
 Dark & Light Modes: Includes a theme toggler that respects your system's preferred color scheme.
 
-Detailed Statistics: Open completed-game statistics and history in a dedicated side panel, including total wins, head-to-head records, longest win streaks, filters, and every recorded round.
+Detailed Statistics: Open completed-game insights in a dedicated side panel with separate Summary, Players, and History tabs, including total wins, head-to-head records, longest win streaks, filters, and every recorded round.
+
+Consistent Player Colors: Every player keeps the same automatically assigned color across live cards, comparison tables, and charts.
 
 Responsive Design: The interface is fully responsive and works great on desktops, tablets, and mobile phones.
 
@@ -33,11 +37,11 @@ An internet connection is required for the Tailwind CSS and Chart.js CDN resourc
 
 Add player names.
 
-Click "Start New Game" and select the first dealer.
+Click "Start game" and select the first dealer.
 
 After each round, enter the points each player has in their hand (the round winner gets 0).
 
-Click "Submit Round" to proceed.
+Press Enter in a score field or click "Save round" to proceed.
 
 The game ends when a player's score reaches 500.
 

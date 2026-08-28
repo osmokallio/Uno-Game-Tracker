@@ -12,17 +12,71 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
+            background:
+                radial-gradient(circle at 10% 0%, rgba(229, 57, 53, 0.08), transparent 24rem),
+                radial-gradient(circle at 90% 10%, rgba(37, 99, 235, 0.08), transparent 28rem),
+                #f5f7fb;
+            min-height: 100vh;
+            color: #172033;
         }
         .dealer-highlight {
-            box-shadow: 0 0 15px 3px rgba(250, 204, 21, 0.7);
-            transform: scale(1.02);
-            transition: all 0.3s ease-in-out;
+            box-shadow: inset 0 0 0 2px #fbbf24, 0 14px 30px rgba(23, 32, 51, 0.09);
         }
         .winner-highlight {
             background-color: #dcfce7 !important;
             border-left: 4px solid #22c55e;
         }
+        .app-header {
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            margin-bottom: 1.5rem; padding: 0.75rem 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.24); border-radius: 18px;
+            background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(18px);
+            box-shadow: 0 12px 35px rgba(23, 32, 51, 0.07);
+        }
+        .surface {
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 18px;
+            box-shadow: 0 14px 34px rgba(23, 32, 51, 0.07);
+        }
+        .setup-grid {
+            display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem;
+            max-width: 64rem; margin: 0 auto;
+        }
+        .game-active #setup-panel { display: none; }
+        .game-active #game-area { display: block; }
+        .live-player-card {
+            position: relative; overflow: hidden;
+            border-top: 4px solid var(--player-color, #2563eb);
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 12px 28px rgba(23, 32, 51, 0.08);
+        }
+        .player-rank {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 2rem; height: 2rem; border-radius: 999px;
+            background: color-mix(in srgb, var(--player-color) 14%, white);
+            color: var(--player-color); font-weight: 800;
+        }
+        .round-score-input {
+            width: 100%; min-height: 3rem; border: 1px solid #cbd5e1; border-radius: 12px;
+            background: #fff; padding: 0.65rem 0.75rem; text-align: center;
+            font-size: 1.125rem; font-weight: 700;
+        }
+        .round-score-input:focus {
+            border-color: var(--player-color, #2563eb); outline: 3px solid color-mix(in srgb, var(--player-color, #2563eb) 20%, transparent);
+        }
+        .round-action-bar {
+            position: sticky; bottom: 0; z-index: 20;
+            margin: 1.25rem -0.5rem -0.5rem; padding: 0.75rem;
+            border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 16px;
+            background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px);
+            box-shadow: 0 -8px 28px rgba(23, 32, 51, 0.1);
+        }
+        .primary-action { background: #e53935; }
+        .primary-action:hover { background: #c62828; }
+        .risk-low { background: #22c55e; }
+        .risk-medium { background: #f59e0b; }
+        .risk-high { background: #ef4444; }
         .modal-backdrop {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.6);
@@ -70,6 +124,28 @@
         }
         .statistics-drawer.active { transform: translateX(0); }
         body.statistics-open { overflow: hidden; }
+        .stats-tab[aria-selected="true"] {
+            background: #172033; color: white; box-shadow: 0 6px 18px rgba(23, 32, 51, 0.16);
+        }
+        .stats-tab-panel[hidden] { display: none; }
+        .stats-filter-bar {
+            position: sticky; top: 5rem; z-index: 5;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(14px);
+        }
+        .toast-region {
+            position: fixed; left: 50%; bottom: 1.25rem; z-index: 70;
+            transform: translateX(-50%); width: min(calc(100% - 2rem), 28rem);
+            pointer-events: none;
+        }
+        .toast-message {
+            padding: 0.8rem 1rem; border-radius: 12px; text-align: center;
+            background: #172033; color: white; box-shadow: 0 14px 35px rgba(23, 32, 51, 0.28);
+            animation: toastIn 0.2s ease-out;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         #live-stats-details > summary { list-style: none; }
         #live-stats-details > summary::-webkit-details-marker { display: none; }
         #live-stats-details > summary::after {
@@ -90,10 +166,30 @@
         }
 
         /* Dark Mode Styles */
-        .dark body { background-color: #111827; }
+        .dark body {
+            background:
+                radial-gradient(circle at 10% 0%, rgba(229, 57, 53, 0.12), transparent 24rem),
+                radial-gradient(circle at 90% 10%, rgba(37, 99, 235, 0.14), transparent 28rem),
+                #0b1220;
+            color: #e5e7eb;
+        }
+        .dark .app-header, .dark .surface, .dark .live-player-card {
+            background: rgba(17, 24, 39, 0.94); border-color: rgba(148, 163, 184, 0.18);
+        }
+        .dark .round-action-bar, .dark .stats-filter-bar { background: rgba(17, 24, 39, 0.95); }
+        .dark .round-score-input { background: #111827; border-color: #475569; color: white; }
+        .dark .player-rank { background: color-mix(in srgb, var(--player-color) 22%, #111827); }
         .dark .winner-highlight { background-color: #166534 !important; color: #dcfce7 !important; }
         .dark .round-winner { color: #6ee7b7; }
-        .dark .dealer-highlight { box-shadow: 0 0 15px 3px rgba(250, 204, 21, 0.5); }
+        .dark .dealer-highlight { box-shadow: inset 0 0 0 2px #fbbf24, 0 14px 30px rgba(0, 0, 0, 0.24); }
+        @media (min-width: 768px) {
+            .setup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 639px) {
+            .app-header { align-items: flex-start; }
+            .header-action-label { display: none; }
+            .round-action-bar { margin-left: -1rem; margin-right: -1rem; margin-bottom: -1rem; border-radius: 16px 16px 0 0; }
+        }
     </style>
     <script>
         // Tailwind dark mode plugin configuration
@@ -106,58 +202,54 @@
 </head>
 <body class="text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-300">
 
-    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
-        <header class="text-center mb-8 relative">
-            <div class="flex justify-center items-center gap-1 mb-4">
-                <div class="w-10 h-14 bg-red-500 rounded-lg shadow-lg -rotate-12 transform border-2 border-white flex items-center justify-center text-white font-bold text-2xl">U</div>
-                <div class="w-10 h-14 bg-yellow-400 rounded-lg shadow-lg rotate-6 transform z-10 border-2 border-white flex items-center justify-center text-white font-bold text-2xl">N</div>
-                <div class="w-10 h-14 bg-blue-500 rounded-lg shadow-lg -rotate-6 transform border-2 border-white flex items-center justify-center text-white font-bold text-2xl">O</div>
+    <div class="container mx-auto max-w-7xl p-3 sm:p-4 md:p-6">
+        <header class="app-header">
+            <div class="flex min-w-0 items-center gap-3">
+                <div class="flex shrink-0 items-center gap-0.5" aria-hidden="true">
+                    <div class="flex h-9 w-7 -rotate-12 items-center justify-center rounded-md border-2 border-white bg-red-500 text-sm font-extrabold text-white shadow">U</div>
+                    <div class="z-10 flex h-9 w-7 rotate-6 items-center justify-center rounded-md border-2 border-white bg-yellow-400 text-sm font-extrabold text-white shadow">N</div>
+                    <div class="flex h-9 w-7 -rotate-6 items-center justify-center rounded-md border-2 border-white bg-blue-500 text-sm font-extrabold text-white shadow">O</div>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="truncate text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Uno Score Tracker</h1>
+                    <p class="hidden text-sm text-gray-500 dark:text-gray-400 sm:block">Fast rounds, clear standings.</p>
+                </div>
             </div>
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">Uno Score Tracker</h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-2">A modern way to keep track of your Uno games.</p>
-
-             <!-- Theme Toggle Button -->
-            <button id="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" class="absolute top-0 right-0 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900">
-                <svg id="theme-toggle-dark-icon" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                <svg id="theme-toggle-light-icon" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-            </button>
+            <div class="flex shrink-0 items-center gap-2">
+                <button id="new-game-btn" type="button" class="primary-action flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 font-semibold text-white shadow-sm transition disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none dark:disabled:bg-gray-700 dark:disabled:text-gray-400" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                    <span class="header-action-label">Start game</span>
+                </button>
+                <button id="toggle-stats-btn" type="button" aria-label="Open statistics and history" aria-controls="statistics-section" aria-expanded="false" class="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2 font-semibold text-white transition hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 002 2h2m4 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14" /></svg>
+                    <span class="header-action-label">History</span>
+                </button>
+                <button id="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" class="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <svg id="theme-toggle-dark-icon" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
         </header>
 
-        <!-- Main Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            <!-- Left Column: Setup & Controls -->
-            <div class="lg:col-span-1 space-y-6">
+        <main id="main-layout">
+            <section id="setup-panel" class="setup-grid" aria-label="Game setup">
                 <!-- Player Setup -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2 dark:border-gray-600">Players</h2>
+                <div class="surface p-5 sm:p-6">
+                    <p class="mb-1 text-xs font-bold uppercase tracking-widest text-red-600 dark:text-red-400">Game setup</p>
+                    <h2 class="mb-4 text-2xl font-semibold">Players</h2>
                     <div id="player-list" class="space-y-2 mb-4"></div>
                     <p class="text-xs text-gray-500 dark:text-gray-400 text-center -mt-2 mb-4">You can reorder players by dragging.</p>
                     <div class="flex space-x-2">
                         <label for="new-player-name" class="sr-only">Player name</label>
-                        <input type="text" id="new-player-name" maxlength="50" autocomplete="off" placeholder="Enter player name" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
-                        <button id="add-player-btn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow">Add</button>
-                    </div>
-                </div>
-
-                <!-- Game Controls -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2 dark:border-gray-600">Game Controls</h2>
-                    <div class="grid grid-cols-1 gap-4">
-                        <button id="new-game-btn" type="button" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition duration-200 shadow font-semibold disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
-                            <span>Start New Game</span>
-                        </button>
-                        <button id="toggle-stats-btn" type="button" aria-controls="statistics-section" aria-expanded="false" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition duration-200 shadow font-semibold flex items-center justify-center gap-2">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm10 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
-                            <span>Show Statistics</span>
-                        </button>
+                        <input type="text" id="new-player-name" maxlength="50" autocomplete="off" placeholder="Enter player name" class="min-w-0 flex-grow rounded-xl border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400">
+                        <button id="add-player-btn" type="button" class="rounded-xl bg-gray-900 px-5 py-3 font-semibold text-white transition hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600">Add</button>
                     </div>
                 </div>
 
                 <!-- Data Management -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2 dark:border-gray-600">Data Management</h2>
+                <div class="surface p-5 sm:p-6">
+                    <p class="mb-1 text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">Saved locally</p>
+                    <h2 class="mb-4 text-2xl font-semibold">Data Management</h2>
                      <div class="space-y-4">
                         <button id="export-data-btn" type="button" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition duration-200 disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -173,12 +265,11 @@
                      </div>
                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-4">Note: Your game is saved automatically in this browser. Use export as a backup or to move data to another device.</p>
                 </div>
-            </div>
+            </section>
 
-            <!-- Right Column: Current Game & Score Entry -->
-            <div id="game-area" class="lg:col-span-2 space-y-6 hidden">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-                    <h2 class="text-3xl font-bold mb-1 text-center">Current Game</h2>
+            <section id="game-area" class="hidden" aria-label="Current game">
+                <div class="surface p-4 sm:p-6">
+                    <h2 class="mb-1 text-center text-2xl font-bold sm:text-3xl">Current Game</h2>
                     <div id="game-status" class="text-center text-gray-600 dark:text-gray-400 mb-4">Round <span id="round-number">1</span>. Current Dealer: <span id="current-dealer-name" class="font-bold">N/A</span></div>
                     <div id="game-summary" role="group" aria-label="Current game summary" aria-live="polite" class="grid grid-cols-3 gap-2 mb-4 text-center">
                         <div class="rounded-lg bg-blue-50 dark:bg-blue-900/30 p-3">
@@ -190,11 +281,11 @@
                             <strong id="summary-leader" class="block text-lg truncate">N/A</strong>
                         </div>
                         <div class="rounded-lg bg-yellow-50 dark:bg-yellow-900/30 p-3">
-                            <span class="block text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Score gap</span>
+                            <span class="block text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Widest gap</span>
                             <strong id="summary-spread" class="text-lg">0</strong>
                         </div>
                     </div>
-                    <div id="scoreboard" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+                    <div id="scoreboard" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
                     <details id="live-stats-details" class="mt-6 border-t dark:border-gray-700 pt-4">
                         <summary class="flex items-center justify-between gap-4 cursor-pointer rounded-lg px-3 py-2 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <span>Live comparison and score progression</span>
@@ -218,25 +309,22 @@
                             <canvas id="score-progression-chart"></canvas>
                         </div>
                     </details>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-                    <h3 class="text-2xl font-semibold mb-4 text-center">Enter Round Scores</h3>
-                    <div id="score-entry" class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center"></div>
-                    <div id="round-controls" class="mt-6 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
-                        <button id="undo-round-btn" type="button" class="w-full sm:w-auto bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition duration-200 shadow-lg font-semibold disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 01-16 0l-1.5-1.5M21 14H11a8 8 0 00-16 0l1.5 1.5" /></svg>
-                            <span>Undo Last Round</span>
-                        </button>
-                        <button id="add-round-btn" type="button" class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-200 shadow-lg text-lg font-semibold flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                            <span>Submit Round</span>
-                        </button>
+                    <div id="round-controls" class="round-action-bar">
+                        <p id="score-entry-error" role="alert" aria-live="polite" class="mb-2 min-h-5 text-center font-medium text-red-600 dark:text-red-400"></p>
+                        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                            <button id="undo-round-btn" type="button" class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-5 py-3 font-semibold text-gray-700 transition hover:bg-gray-200 disabled:text-gray-400 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:disabled:text-gray-500 sm:w-auto">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 01-16 0l-1.5-1.5M21 14H11a8 8 0 00-16 0l1.5 1.5" /></svg>
+                                <span>Undo round</span>
+                            </button>
+                            <button id="add-round-btn" type="button" class="primary-action flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-7 py-3 text-lg font-semibold text-white shadow-lg transition sm:w-auto">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                <span>Save round</span>
+                            </button>
+                        </div>
                     </div>
-                    <p id="score-entry-error" role="alert" aria-live="polite" class="text-red-500 text-center mt-4 h-5"></p>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
 
     </div>
 
@@ -253,6 +341,8 @@
         </div>
         <div id="statistics-content" class="p-4 md:p-6"></div>
     </aside>
+
+    <div id="toast-region" class="toast-region" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <!-- Modals -->
     <div id="info-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true" aria-describedby="info-modal-message" inert>
@@ -305,9 +395,16 @@
             });
 
             const createDictionary = () => Object.create(null);
+            const PLAYER_COLORS = ['#2563eb', '#e53935', '#16a34a', '#d97706', '#7c3aed', '#db2777', '#0891b2', '#4f46e5'];
+
+            function getPlayerColor(playerName) {
+                const hash = [...playerName].reduce((value, character) => ((value * 31) + character.codePointAt(0)) >>> 0, 0);
+                return PLAYER_COLORS[hash % PLAYER_COLORS.length];
+            }
 
             let state = createEmptyState();
             let statsFilters = { player: 'all', date: '' };
+            let activeStatsTab = 'summary';
 
             // DOM ELEMENTS
             const playerListEl = document.getElementById('player-list');
@@ -316,7 +413,6 @@
             const newGameBtn = document.getElementById('new-game-btn');
             const gameAreaEl = document.getElementById('game-area');
             const scoreboardEl = document.getElementById('scoreboard');
-            const scoreEntryEl = document.getElementById('score-entry');
             const addRoundBtn = document.getElementById('add-round-btn');
             const undoRoundBtn = document.getElementById('undo-round-btn');
             const roundControlsEl = document.getElementById('round-controls');
@@ -333,6 +429,7 @@
             const statsContentEl = document.getElementById('statistics-content');
             const statsBackdropEl = document.getElementById('statistics-backdrop');
             const closeStatsBtn = document.getElementById('close-stats-btn');
+            const toastRegionEl = document.getElementById('toast-region');
 
             // Chart instances
             let winsBarChart = null;
@@ -568,6 +665,19 @@
             }
             infoModalOkBtn.addEventListener('click', () => closeModal(infoModal));
 
+            let toastTimer = null;
+            function showToast(message) {
+                window.clearTimeout(toastTimer);
+                toastRegionEl.innerHTML = '';
+                const toast = document.createElement('div');
+                toast.className = 'toast-message';
+                toast.textContent = message;
+                toastRegionEl.appendChild(toast);
+                toastTimer = window.setTimeout(() => {
+                    toastRegionEl.innerHTML = '';
+                }, 2400);
+            }
+
             function showConfirmation(title, message, onConfirm) {
                 modalTitle.textContent = title;
                 modalMessage.textContent = message;
@@ -645,6 +755,10 @@
             function renderPlayers() {
                 playerListEl.innerHTML = '';
                 const isGameInProgress = state.currentGame !== null;
+                document.body.classList.toggle('game-active', isGameInProgress);
+                const newGameLabel = newGameBtn.querySelector('span');
+                if (newGameLabel) newGameLabel.textContent = isGameInProgress ? 'Restart game' : 'Start game';
+                newGameBtn.setAttribute('aria-label', isGameInProgress ? 'Restart current game' : 'Start new game');
 
                 newPlayerNameInput.disabled = isGameInProgress;
                 addPlayerBtn.disabled = isGameInProgress;
@@ -759,11 +873,15 @@
                 if (!state.currentGame) return [];
                 const leaderScore = Math.min(...state.currentGame.players.map(player => player.score));
                 const latestRound = state.currentGame.rounds[state.currentGame.rounds.length - 1];
+                const rankedScores = [...new Set(state.currentGame.players.map(player => player.score))].sort((a, b) => a - b);
 
                 return state.currentGame.players.map((player, index) => ({
                     ...player,
+                    rank: rankedScores.indexOf(player.score) + 1,
+                    color: getPlayerColor(player.name),
                     isLeader: player.score === leaderScore,
                     isDealer: index === state.currentGame.dealerIndex,
+                    isLatestRoundWinner: latestRound?.winner === player.name,
                     behindLeader: player.score - leaderScore,
                     lastRoundScore: latestRound ? latestRound.scores[player.name] : 0,
                     roundWins: state.currentGame.rounds.filter(round => round.winner === player.name).length,
@@ -783,16 +901,24 @@
                 summarySpreadEl.textContent = Math.max(...scores) - Math.min(...scores);
 
                 scoreboardEl.innerHTML = '';
-                liveStats.forEach(player => {
+                liveStats.forEach((player, index) => {
                     const card = document.createElement('article');
-                    card.className = `live-player-card p-4 rounded-lg shadow-sm border dark:border-gray-700 transition-all duration-300 ${player.isDealer ? 'dealer-highlight' : 'bg-gray-50 dark:bg-gray-700/50'}`;
+                    card.className = `live-player-card rounded-2xl border p-4 transition-all duration-300 dark:border-gray-700 ${player.isDealer ? 'dealer-highlight' : ''}`;
                     card.dataset.player = player.name;
+                    card.style.setProperty('--player-color', player.color);
 
                     const headingRow = document.createElement('div');
                     headingRow.className = 'flex items-start justify-between gap-2';
+                    const identity = document.createElement('div');
+                    identity.className = 'flex min-w-0 items-center gap-2';
+                    const rank = document.createElement('span');
+                    rank.className = 'player-rank shrink-0';
+                    rank.textContent = String(player.rank);
+                    rank.setAttribute('aria-label', `Rank ${player.rank}`);
                     const nameDiv = document.createElement('h3');
-                    nameDiv.className = 'text-lg font-semibold break-words';
+                    nameDiv.className = 'min-w-0 break-words text-lg font-semibold';
                     nameDiv.textContent = player.name;
+                    identity.append(rank, nameDiv);
                     const badges = document.createElement('div');
                     badges.className = 'flex flex-wrap justify-end gap-1 text-xs';
                     if (player.isLeader) {
@@ -807,24 +933,35 @@
                         dealerBadge.textContent = 'Dealer';
                         badges.appendChild(dealerBadge);
                     }
-                    headingRow.append(nameDiv, badges);
+                    if (player.isLatestRoundWinner) {
+                        const roundWinnerBadge = document.createElement('span');
+                        roundWinnerBadge.className = 'round-winner-badge rounded-full px-2 py-1 font-semibold text-white';
+                        roundWinnerBadge.style.backgroundColor = player.color;
+                        roundWinnerBadge.textContent = 'Round winner';
+                        badges.appendChild(roundWinnerBadge);
+                    }
+                    headingRow.append(identity, badges);
 
+                    const scoreLabel = document.createElement('p');
+                    scoreLabel.className = 'mt-4 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400';
+                    scoreLabel.textContent = 'Total points';
                     const scoreDiv = document.createElement('div');
-                    scoreDiv.className = 'player-total mt-3 text-4xl font-bold';
+                    scoreDiv.className = 'player-total text-4xl font-extrabold tracking-tight';
                     scoreDiv.textContent = player.score;
 
                     const progressLabel = document.createElement('div');
                     progressLabel.className = 'mt-3 flex justify-between text-xs text-gray-500 dark:text-gray-400';
-                    progressLabel.innerHTML = `<span>Progress to 500</span><span>${player.score} / 500</span>`;
+                    progressLabel.innerHTML = `<span>500-point risk</span><span>${player.score} / 500</span>`;
                     const progressTrack = document.createElement('div');
                     progressTrack.className = 'progress-track mt-1 h-2 overflow-hidden rounded-full';
                     progressTrack.setAttribute('role', 'progressbar');
-                    progressTrack.setAttribute('aria-label', `${player.name} score progress`);
+                    progressTrack.setAttribute('aria-label', `${player.name} risk toward 500 points`);
                     progressTrack.setAttribute('aria-valuemin', '0');
                     progressTrack.setAttribute('aria-valuemax', '500');
                     progressTrack.setAttribute('aria-valuenow', String(Math.min(player.score, 500)));
+                    progressTrack.setAttribute('aria-valuetext', `${player.score} points out of 500`);
                     const progressFill = document.createElement('div');
-                    progressFill.className = `h-full rounded-full ${player.score >= 400 ? 'bg-red-500' : player.score >= 250 ? 'bg-yellow-500' : 'bg-blue-500'}`;
+                    progressFill.className = `h-full rounded-full ${player.score >= 400 ? 'risk-high' : player.score >= 250 ? 'risk-medium' : 'risk-low'}`;
                     progressFill.style.width = `${Math.min((player.score / 500) * 100, 100)}%`;
                     progressTrack.appendChild(progressFill);
 
@@ -835,7 +972,25 @@
                         <div><dt class="text-xs text-gray-500 dark:text-gray-400">Round wins</dt><dd class="round-wins font-semibold">${player.roundWins}</dd></div>
                         <div><dt class="text-xs text-gray-500 dark:text-gray-400">To 500</dt><dd class="points-to-500 font-semibold">${player.pointsTo500}</dd></div>`;
 
-                    card.append(headingRow, scoreDiv, progressLabel, progressTrack, metrics);
+                    const entry = document.createElement('div');
+                    entry.className = 'round-score-entry mt-4 border-t border-gray-200 pt-4 dark:border-gray-700';
+                    const label = document.createElement('label');
+                    label.className = 'mb-1 block text-sm font-semibold';
+                    label.textContent = 'This round';
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = `score-player-${index}`;
+                    label.htmlFor = input.id;
+                    input.dataset.player = player.name;
+                    input.className = 'score-input round-score-input';
+                    input.min = '0';
+                    input.step = '1';
+                    input.inputMode = 'numeric';
+                    input.placeholder = '0';
+                    input.setAttribute('aria-label', `${player.name}, this round`);
+                    entry.append(label, input);
+
+                    card.append(headingRow, scoreLabel, scoreDiv, progressLabel, progressTrack, metrics, entry);
                     scoreboardEl.appendChild(card);
                 });
 
@@ -861,34 +1016,12 @@
 
                 renderLiveGameStats();
 
-                scoreEntryEl.innerHTML = '';
-                state.currentGame.players.forEach((player, index) => {
-                    const inputGroup = document.createElement('div');
-
-                    const label = document.createElement('label');
-                    label.className = 'block text-center font-medium mb-1';
-                    label.textContent = player.name;
-
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.id = `score-player-${index}`;
-                    label.htmlFor = input.id;
-                    input.dataset.player = player.name;
-                    input.className = 'score-input w-full p-2 border dark:border-gray-600 rounded-lg text-center bg-transparent';
-                    input.min = '0';
-                    input.step = '1';
-                    input.inputMode = 'numeric';
-
-                    inputGroup.append(label, input);
-                    scoreEntryEl.appendChild(inputGroup);
-                });
-
                 undoRoundBtn.disabled = state.currentGame.rounds.length === 0;
                 updateScoreProgressionChart();
             }
 
             function addRound() {
-                const inputs = [...scoreEntryEl.querySelectorAll('.score-input')];
+                const inputs = [...scoreboardEl.querySelectorAll('.score-input')];
                 const scores = createDictionary();
                 let validationError = '';
                 let playersWithZero = [];
@@ -932,6 +1065,7 @@
                         });
                     }
                     saveStateToLocalStorage();
+                    showToast(`Round ${state.currentGame ? state.currentGame.rounds.length : state.games[state.games.length - 1].rounds.length} saved`);
                 };
 
                 if (playersWithZero.length > 1) {
@@ -955,6 +1089,7 @@
 
                 renderGame();
                 saveStateToLocalStorage();
+                showToast('Last round undone');
             }
 
             function endGame() {
@@ -979,7 +1114,7 @@
                 winnerDiv.textContent = `Game Over! Winner${winners.length > 1 ? 's' : ''}: ${winners.join(', ')}`;
                 gameStatusEl.appendChild(winnerDiv);
 
-                scoreEntryEl.innerHTML = '';
+                scoreboardEl.querySelectorAll('.round-score-entry').forEach(entry => entry.remove());
                 roundControlsEl.classList.add('hidden');
 
                 scoreboardEl.querySelectorAll('.live-player-card').forEach(card => {
@@ -1081,7 +1216,7 @@
                             }
                             if (statsSectionEl.classList.contains('active')) calculateAndDisplayStats();
                             saveStateToLocalStorage();
-                            showInfoMessage("Data imported successfully!");
+                            showToast('Data imported successfully');
                         };
 
                         if (state.currentGame || state.games.length > 0 || state.players.length > 0) {
@@ -1108,32 +1243,48 @@
             }
 
             // --- STATISTICS ---
+            function setStatsTab(tabName) {
+                activeStatsTab = tabName;
+                document.querySelectorAll('.stats-tab').forEach(button => {
+                    const isActive = button.dataset.tab === tabName;
+                    button.setAttribute('aria-selected', String(isActive));
+                    button.tabIndex = isActive ? 0 : -1;
+                });
+                document.querySelectorAll('.stats-tab-panel').forEach(panel => {
+                    panel.hidden = panel.dataset.panel !== tabName;
+                });
+            }
+
             function renderStatsSkeleton() {
                 statsContentEl.innerHTML = `
-                    <div class="flex flex-wrap gap-4 justify-center mb-6">
+                    <div class="stats-filter-bar -mx-4 -mt-4 mb-5 flex flex-wrap justify-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700 md:-mx-6 md:-mt-6 md:px-6">
                         <label class="sr-only" for="stats-player-filter">Filter statistics by player</label>
-                        <select id="stats-player-filter" aria-label="Filter statistics by player" class="p-2 border rounded-lg bg-transparent dark:border-gray-600"><option value="all">All Players</option></select>
+                        <select id="stats-player-filter" aria-label="Filter statistics by player" class="rounded-xl border bg-transparent p-2.5 dark:border-gray-600"><option value="all">All Players</option></select>
                         <label class="sr-only" for="stats-date-filter">Filter statistics by date</label>
-                        <input type="date" id="stats-date-filter" aria-label="Filter statistics by date" class="p-2 border rounded-lg bg-transparent dark:border-gray-600">
-                        <button id="clear-filters-btn" type="button" class="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-lg">Clear Filters</button>
+                        <input type="date" id="stats-date-filter" aria-label="Filter statistics by date" class="rounded-xl border bg-transparent p-2.5 dark:border-gray-600">
+                        <button id="clear-filters-btn" type="button" class="rounded-xl bg-gray-100 px-4 py-2.5 font-medium dark:bg-gray-700">Clear</button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="text-xl font-semibold mb-3">Overall Stats</h3>
-                            <div id="overall-stats" class="space-y-2 text-gray-700 dark:text-gray-300"></div>
-                            <div class="mt-6">
-                                <h4 class="text-lg font-semibold mb-2 text-center">Total Wins</h4>
-                                <div id="wins-bar-chart-container"><canvas id="wins-bar-chart"></canvas></div>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-semibold mb-3">Head-to-Head</h3>
-                            <div id="h2h-stats" class="space-y-2"></div>
+                    <div role="tablist" aria-label="Statistics views" class="mb-6 grid grid-cols-3 gap-2 rounded-2xl bg-gray-100 p-1.5 dark:bg-gray-900">
+                        <button id="stats-summary-tab" class="stats-tab min-h-11 rounded-xl px-3 py-2 font-semibold transition" type="button" role="tab" data-tab="summary" aria-controls="stats-summary-panel">Summary</button>
+                        <button id="stats-players-tab" class="stats-tab min-h-11 rounded-xl px-3 py-2 font-semibold transition" type="button" role="tab" data-tab="players" aria-controls="stats-players-panel">Players</button>
+                        <button id="stats-history-tab" class="stats-tab min-h-11 rounded-xl px-3 py-2 font-semibold transition" type="button" role="tab" data-tab="history" aria-controls="stats-history-panel">History</button>
+                    </div>
+                    <div id="stats-summary-panel" class="stats-tab-panel" role="tabpanel" data-panel="summary" aria-labelledby="stats-summary-tab">
+                        <h3 class="mb-3 text-xl font-semibold">Overview</h3>
+                        <div id="overall-stats" class="text-gray-700 dark:text-gray-300"></div>
+                        <div class="surface mt-6 p-4 dark:shadow-none">
+                            <h4 class="mb-2 text-lg font-semibold">Wins by player</h4>
+                            <div id="wins-bar-chart-container"><canvas id="wins-bar-chart"></canvas></div>
                         </div>
                     </div>
-                    <div class="mt-8">
-                        <h3 class="text-xl font-semibold mb-3">Game History</h3>
-                        <div id="game-history" class="space-y-6"></div>
+                    <div id="stats-players-panel" class="stats-tab-panel" role="tabpanel" data-panel="players" aria-labelledby="stats-players-tab">
+                        <h3 class="mb-1 text-xl font-semibold">Head-to-head</h3>
+                        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Each cell shows wins–losses for the row player.</p>
+                        <div id="h2h-stats"></div>
+                    </div>
+                    <div id="stats-history-panel" class="stats-tab-panel" role="tabpanel" data-panel="history" aria-labelledby="stats-history-tab">
+                        <h3 class="mb-3 text-xl font-semibold">Game history</h3>
+                        <div id="game-history" class="space-y-5"></div>
                     </div>`;
 
                 document.getElementById('stats-player-filter').addEventListener('change', event => {
@@ -1148,6 +1299,20 @@
                     statsFilters = { player: 'all', date: '' };
                     calculateAndDisplayStats();
                 });
+                document.querySelectorAll('.stats-tab').forEach(button => {
+                    button.addEventListener('click', () => setStatsTab(button.dataset.tab));
+                    button.addEventListener('keydown', event => {
+                        if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+                        event.preventDefault();
+                        const tabs = [...document.querySelectorAll('.stats-tab')];
+                        const currentIndex = tabs.indexOf(button);
+                        const direction = event.key === 'ArrowRight' ? 1 : -1;
+                        const nextTab = tabs[(currentIndex + direction + tabs.length) % tabs.length];
+                        setStatsTab(nextTab.dataset.tab);
+                        nextTab.focus();
+                    });
+                });
+                setStatsTab(activeStatsTab);
             }
 
             let statsDrawerPreviouslyFocused = null;
@@ -1162,7 +1327,8 @@
                 statsBackdropEl.setAttribute('aria-hidden', 'false');
                 document.body.classList.add('statistics-open');
                 toggleStatsBtn.setAttribute('aria-expanded', 'true');
-                toggleStatsBtn.querySelector('span').textContent = 'Hide Statistics';
+                toggleStatsBtn.setAttribute('aria-label', 'Close statistics and history');
+                toggleStatsBtn.querySelector('span').textContent = 'Close';
                 calculateAndDisplayStats();
                 requestAnimationFrame(() => closeStatsBtn.focus());
             }
@@ -1176,7 +1342,8 @@
                 statsBackdropEl.setAttribute('aria-hidden', 'true');
                 document.body.classList.remove('statistics-open');
                 toggleStatsBtn.setAttribute('aria-expanded', 'false');
-                toggleStatsBtn.querySelector('span').textContent = 'Show Statistics';
+                toggleStatsBtn.setAttribute('aria-label', 'Open statistics and history');
+                toggleStatsBtn.querySelector('span').textContent = 'History';
                 const focusTarget = statsDrawerPreviouslyFocused instanceof HTMLElement && statsDrawerPreviouslyFocused !== document.body
                     ? statsDrawerPreviouslyFocused
                     : toggleStatsBtn;
@@ -1286,19 +1453,39 @@
             }
 
             function renderOverallStats(element, games, wins, rounds, streak) {
+                const sortedWins = Object.entries(wins).sort((a, b) => b[1] - a[1]);
+                const topWinner = sortedWins.length > 0 && sortedWins[0][1] > 0 ? sortedWins[0] : ['N/A', 0];
+                const highestRound = rounds[0];
                 element.innerHTML = `
-                    <p><strong>Total Games Played (in filter):</strong> ${games.length}</p>
-                    <p><strong>Wins Per Player (in filter):</strong></p>
-                    <ul class="list-disc pl-5">${Object.entries(wins).sort((a,b)=>b[1]-a[1]).map(([p, w]) => `<li>${escape(p)}: ${w}</li>`).join('')}</ul>
-                    <p><strong>Highest Scoring Rounds (in filter):</strong></p>
-                    <ul class="list-disc pl-5">${rounds.map(r => `<li>${escape(r.player)}: ${r.score} points</li>`).join('') || '<li>N/A</li>'}</ul>
-                    <p class="mt-2"><strong>Longest Win Streak (all time):</strong> ${escape(streak.player)} (${streak.streak} games)</p>`;
+                    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        <div class="surface p-4 dark:shadow-none"><span class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Games</span><strong class="mt-1 block text-3xl">${games.length}</strong></div>
+                        <div class="surface p-4 dark:shadow-none"><span class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Most wins</span><strong class="mt-1 block truncate text-xl" title="${escape(topWinner[0])}">${escape(topWinner[0])}</strong><span class="text-sm text-gray-500">${topWinner[1]} wins</span></div>
+                        <div class="surface p-4 dark:shadow-none"><span class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Longest streak</span><strong class="mt-1 block truncate text-xl" title="${escape(streak.player)}">${escape(streak.player)}</strong><span class="text-sm text-gray-500">${streak.streak} games</span></div>
+                        <div class="surface p-4 dark:shadow-none"><span class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Highest round</span><strong class="mt-1 block text-3xl">${highestRound ? highestRound.score : '–'}</strong><span class="block truncate text-sm text-gray-500">${highestRound ? escape(highestRound.player) : 'No rounds'}</span></div>
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-2" aria-label="Wins per player">
+                        ${sortedWins.map(([player, count]) => `<span class="rounded-full bg-gray-100 px-3 py-1.5 text-sm dark:bg-gray-700"><strong>${escape(player)}</strong> ${count}</span>`).join('')}
+                    </div>`;
             }
 
             function renderH2HStats(element, h2h) {
-                element.innerHTML = Object.entries(h2h).map(([p1, op]) => `
-                    <div class="mb-2"><strong>${escape(p1)} vs:</strong><ul class="list-disc pl-5 text-sm">${Object.entries(op).map(([p2, r]) => `<li>${escape(p2)}: ${r.win}W - ${r.loss}L</li>`).join('')}</ul></div>
-                `).join('');
+                const players = Object.keys(h2h);
+                element.innerHTML = `
+                    <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700">
+                        <table class="w-full min-w-max border-collapse text-center text-sm">
+                            <caption class="sr-only">Head-to-head wins and losses</caption>
+                            <thead class="bg-gray-100 dark:bg-gray-900"><tr><th scope="col" class="px-3 py-3 text-left">Player</th>${players.map(player => `<th scope="col" class="px-3 py-3">${escape(player)}</th>`).join('')}</tr></thead>
+                            <tbody>${players.map(player => `
+                                <tr class="h2h-player-row border-t border-gray-200 dark:border-gray-700" data-player="${escape(player)}">
+                                    <th scope="row" class="px-3 py-3 text-left">${escape(player)}</th>
+                                    ${players.map(opponent => {
+                                        const result = h2h[player][opponent];
+                                        return `<td class="px-3 py-3 ${player === opponent ? 'text-gray-400' : ''}">${result ? `${result.win}–${result.loss}` : '—'}</td>`;
+                                    }).join('')}
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
             }
 
             function renderGameHistory(element, games) {
@@ -1314,13 +1501,13 @@
                 }, createDictionary());
 
                 element.innerHTML = Object.entries(gamesByDate).map(([date, dateGames]) => `
-                    <h4 class="text-lg font-semibold mt-4 border-b dark:border-gray-600 pb-1">Games on ${escape(date)}</h4>
+                    <h4 class="mt-6 flex items-center gap-3 text-sm font-bold uppercase tracking-wider text-gray-500"><span class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></span>${escape(date)}<span class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></span></h4>
                     ${dateGames.map((game, index) => `
-                        <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg mt-2">
+                        <div class="mt-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
                             <details>
-                                <summary class="cursor-pointer font-medium">Game ${index + 1}: Winner - ${escape(game.winners.join(', '))}</summary>
+                                <summary class="flex cursor-pointer items-center justify-between gap-4 font-medium"><span>Winner: <strong class="text-green-700 dark:text-green-400">${escape(game.winners.join(', '))}</strong></span><span class="text-sm text-gray-500">${game.rounds.length} rounds</span></summary>
                                 <div class="mt-4">
-                                    <p><strong>Final Scores:</strong> ${game.finalScores.map(s => `${escape(s.name)} (${escape(s.score)})`).join(', ')}</p>
+                                    <div class="flex flex-wrap gap-2" aria-label="Final scores">${game.finalScores.map(s => `<span class="rounded-full bg-gray-100 px-3 py-1.5 text-sm dark:bg-gray-700"><strong>${escape(s.name)}</strong> ${escape(s.score)}</span>`).join('')}</div>
                                     <h5 class="font-semibold mt-3 mb-1">Round Details:</h5>
                                     <div class="overflow-x-auto">
                                         <table class="w-full text-center border-collapse dark:border-gray-600">
@@ -1372,8 +1559,8 @@
                         datasets: [{
                             label: 'Total Wins (in filter)',
                             data: sortedWins.map(item => item[1]),
-                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                            borderColor: 'rgba(59, 130, 246, 1)',
+                            backgroundColor: sortedWins.map(item => getPlayerColor(item[0])),
+                            borderColor: sortedWins.map(item => getPlayerColor(item[0])),
                             borderWidth: 1
                         }]
                     },
@@ -1418,11 +1605,10 @@
                 const chartCanvas = document.getElementById('score-progression-chart');
 
                 const themeColors = getChartThemeColors();
-                const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
                 const datasets = state.currentGame.players.map((player, index) => ({
                     label: player.name,
                     data: player.scoreHistory,
-                    borderColor: colors[index % colors.length],
+                    borderColor: getPlayerColor(player.name),
                     tension: 0.1,
                     fill: false
                 }));
@@ -1476,6 +1662,11 @@
             });
             newGameBtn.addEventListener('click', startNewGame);
             addRoundBtn.addEventListener('click', addRound);
+            scoreboardEl.addEventListener('keydown', event => {
+                if (event.key !== 'Enter' || !event.target.matches('.score-input')) return;
+                event.preventDefault();
+                addRound();
+            });
             undoRoundBtn.addEventListener('click', undoLastRound);
             exportDataBtn.addEventListener('click', exportData);
             importDataInput.addEventListener('change', importData);
