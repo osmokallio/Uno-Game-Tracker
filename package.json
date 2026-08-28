@@ -1,0 +1,14 @@
+{
+  "name": "uno-game-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/app.test.cjs",
+    "validate:html": "html-validate index.html",
+    "check": "npm run validate:html && npm test"
+  },
+  "devDependencies": {
+    "html-validate": "^9.7.1",
+    "jsdom": "^24.1.3"
+  }
+}

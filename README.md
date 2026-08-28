@@ -23,9 +23,11 @@ Detailed Statistics: View comprehensive stats, including total wins, head-to-hea
 Responsive Design: The interface is fully responsive and works great on desktops, tablets, and mobile phones.
 
 How to Use
-Download the uno-score-tracker.html file.
+Download the index.html file.
 
 Open the file in any modern web browser (like Chrome, Firefox, Safari, or Edge).
+
+An internet connection is required for the Tailwind CSS and Chart.js CDN resources. Core scorekeeping remains available if Chart.js cannot be loaded, but charts are hidden.
 
 Add player names.
 
@@ -45,6 +47,13 @@ Tailwind CSS: For a modern, utility-first styling approach.
 JavaScript: For all the game logic, state management, and interactivity.
 
 Chart.js: For rendering the score progression and statistics charts.
+
+Development Checks
+
+Install the development dependencies and run the HTML validation and DOM integration tests:
+
+    npm install
+    npm run check
 
 ​
 
@@ -126,6 +135,8 @@ Data & History Rules
 
         Head-to-head records track wins/losses between specific players
 
+        Co-winners in a tied game are not counted as winning against each other
+
         Filters apply to displayed stats but not all-time records
 
 UI/UX Rules
@@ -205,4 +216,3 @@ Player Reordering Details
         Purpose: Arrange players in physical seating order for easier gameplay
 
         Impact: Player order determines clockwise dealer rotation
-
