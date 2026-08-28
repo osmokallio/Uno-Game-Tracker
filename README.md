@@ -6,6 +6,8 @@ Player Management: Easily add, remove, and reorder players before starting a gam
 
 Real-time Scorekeeping: Enter scores for each player at the end of a round, and the totals are updated automatically.
 
+Live Game Dashboard: Player cards show the leader, dealer, latest round score, round wins, and progress toward 500 points. An expandable comparison table and score chart provide more detail without crowding the main view.
+
 Dealer Tracking: The dealer role automatically rotates to the next player after each round.
 
 Game Logic: The game automatically ends when one or more players reach 500 points, and the player with the lowest score is declared the winner.
@@ -18,7 +20,7 @@ Data Portability: Export your entire game history and player list to a JSON file
 
 Dark & Light Modes: Includes a theme toggler that respects your system's preferred color scheme.
 
-Detailed Statistics: View comprehensive stats, including total wins, head-to-head records, longest win streaks, and a detailed history of every game played.
+Detailed Statistics: Open completed-game statistics and history in a dedicated side panel, including total wins, head-to-head records, longest win streaks, filters, and every recorded round.
 
 Responsive Design: The interface is fully responsive and works great on desktops, tablets, and mobile phones.
 
