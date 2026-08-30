@@ -58,12 +58,20 @@
             color: var(--player-color); font-weight: 800;
         }
         .round-score-input {
-            width: 100%; min-height: 3rem; border: 1px solid #cbd5e1; border-radius: 12px;
+            width: 6rem; min-height: 3rem; border: 1px solid #cbd5e1; border-radius: 12px;
             background: #fff; padding: 0.65rem 0.75rem; text-align: center;
             font-size: 1.125rem; font-weight: 700;
         }
         .round-score-input:focus {
             border-color: var(--player-color, #2563eb); outline: 3px solid color-mix(in srgb, var(--player-color, #2563eb) 20%, transparent);
+        }
+        .round-score-input[aria-invalid="true"] {
+            border-color: #dc2626; outline-color: rgba(220, 38, 38, 0.2);
+        }
+        .round-score-field {
+            display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+            min-width: 0; border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 14px;
+            background: rgba(255, 255, 255, 0.72); padding: 0.65rem 0.75rem;
         }
         .round-action-bar {
             position: sticky; bottom: 0; z-index: 20;
@@ -178,6 +186,7 @@
         }
         .dark .round-action-bar, .dark .stats-filter-bar { background: rgba(17, 24, 39, 0.95); }
         .dark .round-score-input { background: #111827; border-color: #475569; color: white; }
+        .dark .round-score-field { background: rgba(17, 24, 39, 0.72); border-color: rgba(148, 163, 184, 0.2); }
         .dark .player-rank { background: color-mix(in srgb, var(--player-color) 22%, #111827); }
         .dark .winner-highlight { background-color: #166534 !important; color: #dcfce7 !important; }
         .dark .round-winner { color: #6ee7b7; }
@@ -285,6 +294,16 @@
                             <strong id="summary-spread" class="text-lg">0</strong>
                         </div>
                     </div>
+                    <section id="round-score-entry" class="mb-5 rounded-2xl border border-gray-200 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-900/50" aria-labelledby="round-score-title">
+                        <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+                            <div>
+                                <h3 id="round-score-title" class="text-lg font-bold">This round</h3>
+                                <p id="round-score-hint" class="text-sm text-gray-500 dark:text-gray-400">Enter moves to the next player. On the last player, Enter saves the round.</p>
+                            </div>
+                        </div>
+                        <div id="round-score-fields" class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"></div>
+                        <p id="score-entry-error" role="alert" aria-live="polite" class="mt-2 min-h-5 text-center font-medium text-red-600 dark:text-red-400"></p>
+                    </section>
                     <div id="scoreboard" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
                     <details id="live-stats-details" class="mt-6 border-t dark:border-gray-700 pt-4">
                         <summary class="flex items-center justify-between gap-4 cursor-pointer rounded-lg px-3 py-2 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -310,7 +329,6 @@
                         </div>
                     </details>
                     <div id="round-controls" class="round-action-bar">
-                        <p id="score-entry-error" role="alert" aria-live="polite" class="mb-2 min-h-5 text-center font-medium text-red-600 dark:text-red-400"></p>
                         <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                             <button id="undo-round-btn" type="button" class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-5 py-3 font-semibold text-gray-700 transition hover:bg-gray-200 disabled:text-gray-400 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:disabled:text-gray-500 sm:w-auto">
                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 01-16 0l-1.5-1.5M21 14H11a8 8 0 00-16 0l1.5 1.5" /></svg>
@@ -413,6 +431,8 @@
             const newGameBtn = document.getElementById('new-game-btn');
             const gameAreaEl = document.getElementById('game-area');
             const scoreboardEl = document.getElementById('scoreboard');
+            const roundScoreEntryEl = document.getElementById('round-score-entry');
+            const roundScoreFieldsEl = document.getElementById('round-score-fields');
             const addRoundBtn = document.getElementById('add-round-btn');
             const undoRoundBtn = document.getElementById('undo-round-btn');
             const roundControlsEl = document.getElementById('round-controls');
@@ -853,6 +873,7 @@
                      gameAreaEl.classList.remove('hidden');
                      gameAreaEl.classList.add('fade-in');
                      saveStateToLocalStorage();
+                     requestAnimationFrame(() => focusScoreInput(roundScoreFieldsEl.querySelector('.score-input')));
                 };
 
                 const startAction = () => {
@@ -898,6 +919,51 @@
                 }));
             }
 
+            function focusScoreInput(input) {
+                if (!input) return;
+                input.focus();
+                if (typeof input.select === 'function') input.select();
+            }
+
+            function renderRoundScoreInputs(liveStats) {
+                roundScoreFieldsEl.innerHTML = '';
+                roundScoreEntryEl.classList.remove('hidden');
+
+                liveStats.forEach((player, index) => {
+                    const field = document.createElement('div');
+                    field.className = 'round-score-field';
+                    field.style.setProperty('--player-color', player.color);
+
+                    const label = document.createElement('label');
+                    label.className = 'flex min-w-0 items-center gap-2 font-semibold';
+                    label.htmlFor = `score-player-${index}`;
+                    const colorMarker = document.createElement('span');
+                    colorMarker.className = 'h-3 w-3 shrink-0 rounded-full';
+                    colorMarker.style.backgroundColor = player.color;
+                    colorMarker.setAttribute('aria-hidden', 'true');
+                    const playerName = document.createElement('span');
+                    playerName.className = 'truncate';
+                    playerName.textContent = player.name;
+                    label.append(colorMarker, playerName);
+
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = `score-player-${index}`;
+                    input.dataset.player = player.name;
+                    input.className = 'score-input round-score-input shrink-0';
+                    input.min = '0';
+                    input.step = '1';
+                    input.inputMode = 'numeric';
+                    input.setAttribute('enterkeyhint', index === liveStats.length - 1 ? 'done' : 'next');
+                    input.placeholder = '0';
+                    input.setAttribute('aria-label', `${player.name}, this round`);
+                    input.setAttribute('aria-describedby', 'round-score-hint');
+
+                    field.append(label, input);
+                    roundScoreFieldsEl.appendChild(field);
+                });
+            }
+
             function renderLiveGameStats() {
                 const liveStats = getLivePlayerStats();
                 if (liveStats.length === 0) return;
@@ -908,6 +974,7 @@
                 summaryLeaderEl.textContent = leaders.length === 1 ? leaders[0] : `Tie: ${leaders.join(', ')}`;
                 summaryLeaderEl.title = summaryLeaderEl.textContent;
                 summarySpreadEl.textContent = Math.max(...scores) - Math.min(...scores);
+                renderRoundScoreInputs(liveStats);
 
                 scoreboardEl.innerHTML = '';
                 liveStats.forEach((player, index) => {
@@ -981,25 +1048,7 @@
                         <div><dt class="text-xs text-gray-500 dark:text-gray-400">Round wins</dt><dd class="round-wins font-semibold">${player.roundWins}</dd></div>
                         <div><dt class="text-xs text-gray-500 dark:text-gray-400">To 500</dt><dd class="points-to-500 font-semibold">${player.pointsTo500}</dd></div>`;
 
-                    const entry = document.createElement('div');
-                    entry.className = 'round-score-entry mt-4 border-t border-gray-200 pt-4 dark:border-gray-700';
-                    const label = document.createElement('label');
-                    label.className = 'mb-1 block text-sm font-semibold';
-                    label.textContent = 'This round';
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.id = `score-player-${index}`;
-                    label.htmlFor = input.id;
-                    input.dataset.player = player.name;
-                    input.className = 'score-input round-score-input';
-                    input.min = '0';
-                    input.step = '1';
-                    input.inputMode = 'numeric';
-                    input.placeholder = '0';
-                    input.setAttribute('aria-label', `${player.name}, this round`);
-                    entry.append(label, input);
-
-                    card.append(headingRow, scoreLabel, scoreDiv, progressLabel, progressTrack, metrics, entry);
+                    card.append(headingRow, scoreLabel, scoreDiv, progressLabel, progressTrack, metrics);
                     scoreboardEl.appendChild(card);
                 });
 
@@ -1030,25 +1079,33 @@
             }
 
             function addRound() {
-                const inputs = [...scoreboardEl.querySelectorAll('.score-input')];
+                const inputs = [...roundScoreFieldsEl.querySelectorAll('.score-input')];
                 const scores = createDictionary();
                 let validationError = '';
                 let playersWithZero = [];
+                let firstInvalidInput = null;
 
                 inputs.forEach(input => {
+                    input.removeAttribute('aria-invalid');
                     const playerName = input.dataset.player;
                     const score = input.value.trim() === '' ? Number.NaN : Number(input.value);
-                    if (!isValidScore(score)) validationError = 'All scores must be non-negative whole numbers.';
+                    if (!isValidScore(score)) {
+                        validationError = 'All scores must be non-negative whole numbers.';
+                        input.setAttribute('aria-invalid', 'true');
+                        if (!firstInvalidInput) firstInvalidInput = input;
+                    }
                     scores[playerName] = score;
                     if (score === 0) playersWithZero.push(playerName);
                 });
 
                 if (validationError) {
                     scoreEntryErrorEl.textContent = validationError;
+                    focusScoreInput(firstInvalidInput);
                     return;
                 }
                 if (playersWithZero.length === 0) {
                     scoreEntryErrorEl.textContent = 'One player must have a score of 0 to win the round.';
+                    focusScoreInput(inputs[0]);
                     return;
                 }
                 scoreEntryErrorEl.textContent = '';
@@ -1072,6 +1129,7 @@
                             child.classList.add('fade-in');
                             setTimeout(() => child.classList.remove('fade-in'), 500);
                         });
+                        requestAnimationFrame(() => focusScoreInput(roundScoreFieldsEl.querySelector('.score-input')));
                     }
                     saveStateToLocalStorage();
                     showToast(`Round ${state.currentGame ? state.currentGame.rounds.length : state.games[state.games.length - 1].rounds.length} saved`);
@@ -1099,6 +1157,7 @@
                 renderGame();
                 saveStateToLocalStorage();
                 showToast('Last round undone');
+                requestAnimationFrame(() => focusScoreInput(roundScoreFieldsEl.querySelector('.score-input')));
             }
 
             function endGame() {
@@ -1146,7 +1205,7 @@
                 gameAreaEl.setAttribute('aria-label', 'Game results');
                 document.body.classList.add('game-complete');
 
-                scoreboardEl.querySelectorAll('.round-score-entry').forEach(entry => entry.remove());
+                roundScoreEntryEl.classList.add('hidden');
                 roundControlsEl.classList.add('hidden');
 
                 scoreboardEl.querySelectorAll('.live-player-card').forEach(card => {
@@ -1706,9 +1765,15 @@
                 requestAnimationFrame(() => newPlayerNameInput.focus());
             });
             addRoundBtn.addEventListener('click', addRound);
-            scoreboardEl.addEventListener('keydown', event => {
+            roundScoreFieldsEl.addEventListener('keydown', event => {
                 if (event.key !== 'Enter' || !event.target.matches('.score-input')) return;
                 event.preventDefault();
+                const inputs = [...roundScoreFieldsEl.querySelectorAll('.score-input')];
+                const currentIndex = inputs.indexOf(event.target);
+                if (currentIndex < inputs.length - 1) {
+                    focusScoreInput(inputs[currentIndex + 1]);
+                    return;
+                }
                 addRound();
             });
             undoRoundBtn.addEventListener('click', undoLastRound);

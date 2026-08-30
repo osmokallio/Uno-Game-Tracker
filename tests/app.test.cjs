@@ -63,6 +63,8 @@ test('validates whole-number scores and preserves statistics filters', async t =
   inputs[1].value = '1.5';
   click(app, app.document.querySelector('#add-round-btn'));
   assert.match(app.document.querySelector('#score-entry-error').textContent, /whole numbers/);
+  assert.equal(app.document.activeElement, inputs[1]);
+  assert.equal(inputs[1].getAttribute('aria-invalid'), 'true');
   assert.equal(app.document.querySelector('#round-number').textContent, '1');
 
   inputs[1].value = '500';
@@ -105,6 +107,8 @@ test('handles a __proto__ player name without corrupting scores', async t => {
   addPlayer(app, 'Bob');
   startGame(app);
   const inputs = app.document.querySelectorAll('.score-input');
+  assert.equal(inputs[0].getAttribute('enterkeyhint'), 'next');
+  assert.equal(inputs[1].getAttribute('enterkeyhint'), 'done');
   inputs[0].value = '0';
   inputs[1].value = '500';
   click(app, app.document.querySelector('#add-round-btn'));
@@ -177,7 +181,7 @@ test('normalizes imported totals instead of rendering imported HTML', async t =>
   assert.equal(typeof imported.games[0].finalScores[0].score, 'number');
 });
 
-test('shows live player metrics and a compact game summary after every round', async t => {
+test('moves through compact score fields and shows live metrics after every round', async t => {
   const app = await createApp();
   t.after(() => app.dom.window.close());
 
@@ -189,12 +193,17 @@ test('shows live player metrics and a compact game summary after every round', a
   inputs[0].value = '0';
   inputs[1].value = '40';
   inputs[0].dispatchEvent(new app.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  assert.equal(app.document.activeElement, inputs[1]);
+  assert.equal(app.document.querySelector('#summary-rounds').textContent, '0');
+  inputs[1].dispatchEvent(new app.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await new Promise(resolve => app.window.requestAnimationFrame(resolve));
 
   const aliceCard = app.document.querySelector('.live-player-card[data-player="Alice"]');
   const bobCard = app.document.querySelector('.live-player-card[data-player="Bob"]');
   assert.equal(app.document.body.classList.contains('game-active'), true);
-  assert.equal(app.document.querySelector('#score-entry'), null);
-  assert.ok(aliceCard.querySelector('.round-score-entry .score-input'));
+  assert.equal(app.document.querySelectorAll('#round-score-fields .score-input').length, 2);
+  assert.equal(aliceCard.querySelector('.score-input'), null);
+  assert.equal(app.document.activeElement, app.document.querySelector('#round-score-fields .score-input'));
   assert.equal(app.document.querySelector('#summary-rounds').textContent, '1');
   assert.equal(app.document.querySelector('#summary-leader').textContent, 'Alice');
   assert.equal(app.document.querySelector('#summary-spread').textContent, '40');
@@ -226,6 +235,7 @@ test('opens and closes the statistics drawer without rebuilding it on filter cha
   assert.equal(app.document.querySelector('#current-game-title').textContent, 'Game results');
   assert.match(app.document.querySelector('.game-result-card').textContent, /Winner: Alice/);
   assert.ok(app.document.querySelector('#play-again-btn'));
+  assert.equal(app.document.querySelector('#round-score-entry').classList.contains('hidden'), true);
 
   const toggle = app.document.querySelector('#toggle-stats-btn');
   click(app, toggle);

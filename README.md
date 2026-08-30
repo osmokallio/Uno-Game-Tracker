@@ -6,9 +6,9 @@ Player Management: Easily add, remove, and reorder players before starting a gam
 
 Real-time Scorekeeping: Enter scores for each player at the end of a round, and the totals are updated automatically.
 
-Focused Live Game: Starting a game gives the scoreboard the full width of the app. Each player card combines the live total, round input, rank, dealer and leader status, latest result, round wins, and a color-coded 500-point risk meter.
+Focused Live Game: Starting a game gives the scoreboard the full width of the app. Each player card combines the live total, rank, dealer and leader status, latest result, round wins, and a color-coded 500-point risk meter.
 
-Fast Round Entry: Save a round directly from the player cards with Enter or the sticky action bar, which stays within thumb reach on mobile.
+Fast Round Entry: All player scores are grouped in one compact panel. Enter moves to the next player, and Enter on the final player saves the round. The sticky action bar remains within thumb reach on mobile.
 
 Dealer Tracking: The dealer role automatically rotates to the next player after each round.
 
@@ -41,7 +41,7 @@ Click "Start game" and select the first dealer.
 
 After each round, enter the points each player has in their hand (the round winner gets 0).
 
-Press Enter in a score field or click "Save round" to proceed.
+Press Enter to move through the players. On the final score field, press Enter or click "Save round" to proceed.
 
 The game ends when a player's score reaches 500.
 
