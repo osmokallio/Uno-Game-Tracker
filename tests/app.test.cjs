@@ -47,8 +47,51 @@ function addPlayer(app, name) {
 
 function startGame(app) {
   click(app, app.document.querySelector('#new-game-btn'));
+  click(app, app.document.querySelector('#player-order-continue-btn'));
   click(app, app.document.querySelector('#dealer-options button'));
 }
+
+test('confirms player order before selecting the starting dealer', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  ['Alice', 'Bob', 'Charlie'].forEach(name => addPlayer(app, name));
+  click(app, app.document.querySelector('#new-game-btn'));
+  assert.equal(app.document.querySelector('#player-order-modal').classList.contains('active'), true);
+  assert.equal(app.document.querySelector('#dealer-selection-modal').classList.contains('active'), false);
+
+  click(app, app.document.querySelector('#player-order-cancel-btn'));
+  assert.equal(app.document.querySelector('#player-order-modal').classList.contains('active'), false);
+  assert.equal(JSON.parse(app.window.localStorage.getItem('unoTrackerState')).currentGame, null);
+
+  click(app, app.document.querySelector('#new-game-btn'));
+  let rows = app.document.querySelectorAll('.player-order-row');
+  click(app, rows[2].querySelector('.move-player-up'));
+  rows = app.document.querySelectorAll('.player-order-row');
+  click(app, rows[1].querySelector('.move-player-up'));
+  rows = app.document.querySelectorAll('.player-order-row');
+  assert.deepEqual([...rows].map(row => row.childNodes[1].textContent), ['Charlie', 'Alice', 'Bob']);
+
+  click(app, app.document.querySelector('#player-order-continue-btn'));
+  assert.deepEqual(
+    [...app.document.querySelectorAll('#dealer-options button')].map(button => button.textContent),
+    ['Charlie', 'Alice', 'Bob']
+  );
+  click(app, app.document.querySelector('#dealer-options button'));
+
+  const saved = JSON.parse(app.window.localStorage.getItem('unoTrackerState'));
+  assert.deepEqual(saved.players, ['Charlie', 'Alice', 'Bob']);
+  assert.deepEqual(saved.currentGame.players.map(player => player.name), ['Charlie', 'Alice', 'Bob']);
+  assert.equal(app.document.querySelector('#current-dealer-name').textContent, 'Charlie');
+
+  const scoreInputs = app.document.querySelectorAll('.score-input');
+  scoreInputs[0].value = '0';
+  scoreInputs[1].value = '10';
+  scoreInputs[2].value = '20';
+  click(app, app.document.querySelector('#add-round-btn'));
+  assert.equal(app.document.querySelector('#current-dealer-name').textContent, 'Alice');
+  assert.deepEqual(app.errors, []);
+});
 
 test('validates whole-number scores and preserves statistics filters', async t => {
   const app = await createApp();
@@ -274,6 +317,8 @@ test('opens and closes the statistics drawer without rebuilding it on filter cha
   assert.equal(app.document.activeElement, toggle);
 
   click(app, app.document.querySelector('#play-again-btn'));
+  assert.equal(app.document.querySelector('#player-order-modal').classList.contains('active'), true);
+  click(app, app.document.querySelector('#player-order-continue-btn'));
   click(app, app.document.querySelector('#dealer-options button'));
   assert.equal(app.document.body.classList.contains('game-complete'), false);
   assert.equal(app.document.querySelector('#current-game-title').textContent, 'Current Game');

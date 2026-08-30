@@ -2,7 +2,7 @@ Uno Game Tracker
 A modern, single-file web application for tracking scores in the card game Uno. This tool is designed for ease of use, with no server-side setup required. Just open the HTML file in your browser and start playing.
 
 Features
-Player Management: Easily add, remove, and reorder players before starting a game.
+Player Management: Easily add, remove, and reorder players before starting a game. Every new game also includes a mobile-friendly order confirmation step before dealer selection.
 
 Real-time Scorekeeping: Enter scores for each player at the end of a round, and the totals are updated automatically.
 
@@ -37,7 +37,7 @@ An internet connection is required for the Tailwind CSS and Chart.js CDN resourc
 
 Add player names.
 
-Click "Start game" and select the first dealer.
+Click "Start game", confirm the player order, and select the first dealer.
 
 After each round, enter the points each player has in their hand (the round winner gets 0).
 

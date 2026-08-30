@@ -389,8 +389,22 @@
         </div>
     </div>
 
+    <div id="player-order-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="player-order-title" aria-describedby="player-order-description" inert>
+        <div class="modal-content bg-white dark:bg-gray-800" tabindex="-1">
+            <p class="mb-1 text-xs font-bold uppercase tracking-widest text-red-600 dark:text-red-400">Step 1 of 2</p>
+            <h3 id="player-order-title" class="text-xl font-bold">Set player order</h3>
+            <p id="player-order-description" class="mb-4 mt-1 text-sm text-gray-500 dark:text-gray-400">This order controls how the dealer rotates. Use the arrow buttons to make changes.</p>
+            <ol id="player-order-list" class="space-y-2"></ol>
+            <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button id="player-order-cancel-btn" type="button" class="min-h-11 rounded-xl bg-gray-200 px-4 py-2 font-semibold text-gray-800 transition hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500">Cancel</button>
+                <button id="player-order-continue-btn" type="button" class="primary-action min-h-11 rounded-xl px-5 py-2 font-semibold text-white shadow-sm transition">Continue to dealer</button>
+            </div>
+        </div>
+    </div>
+
     <div id="dealer-selection-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="dealer-selection-title" inert>
         <div class="modal-content bg-white dark:bg-gray-800" tabindex="-1">
+            <p class="mb-1 text-xs font-bold uppercase tracking-widest text-red-600 dark:text-red-400">Step 2 of 2</p>
             <h3 id="dealer-selection-title" class="text-xl font-bold mb-4">Select Starting Dealer</h3>
             <p class="mb-6">Who is dealing the first round?</p>
             <div id="dealer-options" class="space-y-2"></div>
@@ -657,11 +671,17 @@
             const modalConfirmBtn = document.getElementById('modal-confirm-btn');
             const winnerSelectionModal = document.getElementById('winner-selection-modal');
             const winnerOptionsEl = document.getElementById('winner-options');
+            const playerOrderModal = document.getElementById('player-order-modal');
+            const playerOrderListEl = document.getElementById('player-order-list');
+            const playerOrderCancelBtn = document.getElementById('player-order-cancel-btn');
+            const playerOrderContinueBtn = document.getElementById('player-order-continue-btn');
             const dealerSelectionModal = document.getElementById('dealer-selection-modal');
             const dealerOptionsEl = document.getElementById('dealer-options');
 
             let confirmCallback = null;
             let winnerSelectionCallback = null;
+            let playerOrderCallback = null;
+            let playerOrderDraft = [];
             let dealerSelectionCallback = null;
             let previouslyFocusedElement = null;
 
@@ -738,10 +758,88 @@
                 openModal(winnerSelectionModal);
             }
 
-            function showDealerSelection(onSelect) {
+            function renderPlayerOrderDraft(focusIndex = null, focusDirection = 'up') {
+                playerOrderListEl.innerHTML = '';
+                playerOrderDraft.forEach((playerName, index) => {
+                    const row = document.createElement('li');
+                    row.className = 'player-order-row flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-900/60';
+                    row.dataset.index = String(index);
+
+                    const position = document.createElement('span');
+                    position.className = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 font-bold text-gray-700 dark:bg-gray-700 dark:text-gray-100';
+                    position.textContent = String(index + 1);
+                    position.setAttribute('aria-label', `Position ${index + 1}`);
+
+                    const name = document.createElement('span');
+                    name.className = 'min-w-0 flex-1 truncate font-semibold';
+                    name.textContent = playerName;
+
+                    const controls = document.createElement('div');
+                    controls.className = 'flex shrink-0 gap-1';
+                    const moveUp = document.createElement('button');
+                    moveUp.type = 'button';
+                    moveUp.className = 'move-player-up flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-white text-lg font-bold shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-gray-700 dark:hover:bg-gray-600';
+                    moveUp.textContent = '↑';
+                    moveUp.disabled = index === 0;
+                    moveUp.setAttribute('aria-label', `Move ${playerName} up`);
+                    moveUp.addEventListener('click', () => moveDraftPlayer(index, -1));
+
+                    const moveDown = document.createElement('button');
+                    moveDown.type = 'button';
+                    moveDown.className = 'move-player-down flex min-h-10 min-w-10 items-center justify-center rounded-lg bg-white text-lg font-bold shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-gray-700 dark:hover:bg-gray-600';
+                    moveDown.textContent = '↓';
+                    moveDown.disabled = index === playerOrderDraft.length - 1;
+                    moveDown.setAttribute('aria-label', `Move ${playerName} down`);
+                    moveDown.addEventListener('click', () => moveDraftPlayer(index, 1));
+
+                    controls.append(moveUp, moveDown);
+                    row.append(position, name, controls);
+                    playerOrderListEl.appendChild(row);
+                });
+
+                if (focusIndex !== null) {
+                    requestAnimationFrame(() => {
+                        const row = playerOrderListEl.querySelector(`[data-index="${focusIndex}"]`);
+                        const preferred = row?.querySelector(focusDirection === 'up' ? '.move-player-up' : '.move-player-down');
+                        const fallback = row?.querySelector('button:not([disabled])');
+                        (preferred && !preferred.disabled ? preferred : fallback)?.focus();
+                    });
+                }
+            }
+
+            function moveDraftPlayer(index, offset) {
+                const targetIndex = index + offset;
+                if (targetIndex < 0 || targetIndex >= playerOrderDraft.length) return;
+                [playerOrderDraft[index], playerOrderDraft[targetIndex]] = [playerOrderDraft[targetIndex], playerOrderDraft[index]];
+                renderPlayerOrderDraft(targetIndex, offset < 0 ? 'up' : 'down');
+            }
+
+            function showPlayerOrderSelection(onContinue) {
+                playerOrderDraft = [...state.players];
+                playerOrderCallback = onContinue;
+                renderPlayerOrderDraft();
+                openModal(playerOrderModal, '#player-order-list button:not([disabled])');
+            }
+
+            playerOrderCancelBtn.addEventListener('click', () => {
+                playerOrderCallback = null;
+                playerOrderDraft = [];
+                closeModal(playerOrderModal);
+            });
+
+            playerOrderContinueBtn.addEventListener('click', () => {
+                const callback = playerOrderCallback;
+                const selectedOrder = [...playerOrderDraft];
+                playerOrderCallback = null;
+                playerOrderDraft = [];
+                closeModal(playerOrderModal);
+                if (callback) callback(selectedOrder);
+            });
+
+            function showDealerSelection(players, onSelect) {
                 dealerOptionsEl.innerHTML = '';
                 dealerSelectionCallback = onSelect;
-                state.players.forEach((playerName, index) => {
+                players.forEach((playerName, index) => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.textContent = playerName;
@@ -766,6 +864,10 @@
                 } else if (winnerSelectionModal.classList.contains('active')) {
                     winnerSelectionCallback = null;
                     closeModal(winnerSelectionModal);
+                } else if (playerOrderModal.classList.contains('active')) {
+                    playerOrderCallback = null;
+                    playerOrderDraft = [];
+                    closeModal(playerOrderModal);
                 } else if (dealerSelectionModal.classList.contains('active')) {
                     dealerSelectionCallback = null;
                     closeModal(dealerSelectionModal);
@@ -860,10 +962,11 @@
             function startNewGame() {
                  if (state.players.length < 2) return;
 
-                const proceed = (dealerIndex) => {
+                const proceed = (playerOrder, dealerIndex) => {
                      clearCompletedGameView();
+                     state.players = [...playerOrder];
                      state.currentGame = {
-                         players: state.players.map(p => ({ name: p, score: 0, scoreHistory: [0] })),
+                         players: playerOrder.map(p => ({ name: p, score: 0, scoreHistory: [0] })),
                          rounds: [],
                          dealerIndex: dealerIndex
                      };
@@ -877,8 +980,10 @@
                 };
 
                 const startAction = () => {
-                     showDealerSelection(dealerIndex => {
-                        proceed(dealerIndex);
+                     showPlayerOrderSelection(playerOrder => {
+                        showDealerSelection(playerOrder, dealerIndex => {
+                            proceed(playerOrder, dealerIndex);
+                        });
                      });
                 }
 
