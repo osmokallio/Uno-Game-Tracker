@@ -947,15 +947,17 @@
                     label.append(colorMarker, playerName);
 
                     const input = document.createElement('input');
-                    input.type = 'number';
+                    // Text + numeric input mode keeps the mobile number keyboard while
+                    // allowing an explicit "0" consistently across Android browsers.
+                    input.type = 'text';
                     input.id = `score-player-${index}`;
                     input.dataset.player = player.name;
                     input.className = 'score-input round-score-input shrink-0';
-                    input.min = '0';
-                    input.step = '1';
                     input.inputMode = 'numeric';
+                    input.pattern = '[0-9]*';
+                    input.autocomplete = 'off';
                     input.setAttribute('enterkeyhint', index === liveStats.length - 1 ? 'done' : 'next');
-                    input.placeholder = '0';
+                    input.placeholder = 'Score';
                     input.setAttribute('aria-label', `${player.name}, this round`);
                     input.setAttribute('aria-describedby', 'round-score-hint');
 

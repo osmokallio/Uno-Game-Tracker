@@ -140,6 +140,10 @@ test('does not count co-winners as head-to-head wins', async t => {
   ['Alice', 'Bob', 'Charlie'].forEach(name => addPlayer(app, name));
   startGame(app);
   const inputs = app.document.querySelectorAll('.score-input');
+  assert.equal(inputs[0].type, 'text');
+  assert.equal(inputs[0].inputMode, 'numeric');
+  assert.equal(inputs[0].pattern, '[0-9]*');
+  assert.notEqual(inputs[0].placeholder, '0');
   inputs[0].value = '0';
   inputs[1].value = '0';
   inputs[2].value = '500';
@@ -205,6 +209,9 @@ test('moves through compact score fields and shows live metrics after every roun
   assert.equal(aliceCard.querySelector('.score-input'), null);
   assert.equal(app.document.activeElement, app.document.querySelector('#round-score-fields .score-input'));
   assert.equal(app.document.querySelector('#summary-rounds').textContent, '1');
+  const saved = JSON.parse(app.window.localStorage.getItem('unoTrackerState'));
+  assert.equal(saved.currentGame.rounds[0].scores.Alice, 0);
+  assert.equal(saved.currentGame.rounds[0].winner, 'Alice');
   assert.equal(app.document.querySelector('#summary-leader').textContent, 'Alice');
   assert.equal(app.document.querySelector('#summary-spread').textContent, '40');
   assert.equal(aliceCard.querySelector('.leader-badge').textContent, 'Leader');
