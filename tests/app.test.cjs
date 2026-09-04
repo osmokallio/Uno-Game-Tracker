@@ -346,3 +346,59 @@ test('returns from completed results to player editing without showing both view
   assert.equal(app.document.querySelector('#current-game-title').textContent, 'Current Game');
   assert.deepEqual(app.errors, []);
 });
+
+
+test('backs up completed games at any time without exporting the active game', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  const exportButton = app.document.querySelector('header #export-data-btn');
+  assert.ok(exportButton);
+  assert.equal(exportButton.disabled, true);
+
+  addPlayer(app, 'Alice');
+  addPlayer(app, 'Bob');
+  startGame(app);
+  assert.equal(exportButton.disabled, true);
+
+  let inputs = app.document.querySelectorAll('.score-input');
+  inputs[0].value = '0';
+  inputs[1].value = '500';
+  click(app, app.document.querySelector('#add-round-btn'));
+  assert.equal(app.document.body.classList.contains('game-complete'), true);
+  assert.equal(exportButton.disabled, false);
+
+  click(app, app.document.querySelector('#new-game-btn'));
+  click(app, app.document.querySelector('#player-order-continue-btn'));
+  click(app, app.document.querySelector('#dealer-options button'));
+  assert.ok(JSON.parse(app.window.localStorage.getItem('unoTrackerState')).currentGame);
+  assert.equal(exportButton.disabled, false);
+
+  let exportedBlob = null;
+  let downloadName = null;
+  app.window.URL.createObjectURL = blob => {
+    exportedBlob = blob;
+    return 'blob:uno-backup';
+  };
+  app.window.URL.revokeObjectURL = () => {};
+  app.window.HTMLAnchorElement.prototype.click = function() {
+    downloadName = this.download;
+  };
+
+  click(app, exportButton);
+  assert.ok(exportedBlob);
+  assert.match(downloadName, /^uno-game-history-\d{4}-\d{2}-\d{2}\.json$/);
+
+  const exportedText = await new Promise((resolve, reject) => {
+    const reader = new app.window.FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(exportedBlob);
+  });
+  const backup = JSON.parse(exportedText);
+  assert.equal(backup.schemaVersion, 1);
+  assert.equal(backup.games.length, 1);
+  assert.deepEqual(backup.players, ['Alice', 'Bob']);
+  assert.equal(backup.currentGame, null);
+  assert.deepEqual(app.errors, []);
+});
