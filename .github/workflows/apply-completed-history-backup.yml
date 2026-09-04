@@ -1,0 +1,136 @@
+name: Apply completed-game backup fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-completed-history-backup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Patch completed-game backup behavior
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          index_path = Path('index.html')
+          text = index_path.read_text(encoding='utf-8')
+
+          old = '''                </button>\n                <button id="toggle-stats-btn" type="button" aria-label="Open statistics and history"'''
+          new = '''                </button>\n                <button id="export-data-btn" type="button" aria-label="Back up completed game history" class="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400" disabled>\n                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>\n                    <span class="header-action-label">Backup</span>\n                </button>\n                <button id="toggle-stats-btn" type="button" aria-label="Open statistics and history"'''
+          assert old in text, 'Header insertion point not found'
+          text = text.replace(old, new, 1)
+
+          old = '''                        <button id="export-data-btn" type="button" class="w-full bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition duration-200 disabled:bg-gray-400 disabled:dark:bg-gray-600 flex items-center justify-center gap-2">\n                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>\n                            <span>Export Data (JSON)</span>\n                        </button>\n'''
+          assert old in text, 'Old setup export button not found'
+          text = text.replace(old, '', 1)
+
+          old = '''                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-4">Note: Your game is saved automatically in this browser. Use export as a backup or to move data to another device.</p>'''
+          new = '''                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-4">Note: Your game is saved automatically in this browser. Back up completed games from the top bar at any time.</p>'''
+          assert old in text, 'Data management note not found'
+          text = text.replace(old, new, 1)
+
+          old = '''            function updateControlButtonsState() {\n                const hasData = state.players.length > 0 || state.games.length > 0;\n                exportDataBtn.disabled = !hasData;\n            }'''
+          new = '''            function updateControlButtonsState() {\n                exportDataBtn.disabled = state.games.length === 0;\n            }'''
+          assert old in text, 'Control button state function not found'
+          text = text.replace(old, new, 1)
+
+          old = '''            function exportData() {\n                if (state.players.length === 0 && state.games.length === 0) {\n                    showInfoMessage("No data to export.");\n                    return;\n                }\n                const dataStr = JSON.stringify(state, null, 2);\n                const dataBlob = new Blob([dataStr], { type: 'application/json' });\n                const url = URL.createObjectURL(dataBlob);\n                const link = document.createElement('a');\n                link.href = url;\n                const date = new Date().toISOString().slice(0, 10);\n                link.download = `uno-scores-${date}.json`;\n                link.click();\n                URL.revokeObjectURL(url);\n            }'''
+          new = '''            function exportData() {\n                if (state.games.length === 0) {\n                    showInfoMessage('No completed games to back up yet.');\n                    return;\n                }\n                const backupState = {\n                    schemaVersion: SCHEMA_VERSION,\n                    players: [...state.players],\n                    games: state.games,\n                    currentGame: null,\n                };\n                const dataStr = JSON.stringify(backupState, null, 2);\n                const dataBlob = new Blob([dataStr], { type: 'application/json' });\n                const url = URL.createObjectURL(dataBlob);\n                const link = document.createElement('a');\n                link.href = url;\n                const date = new Date().toISOString().slice(0, 10);\n                link.download = `uno-game-history-${date}.json`;\n                link.click();\n                URL.revokeObjectURL(url);\n            }'''
+          assert old in text, 'Export function not found'
+          text = text.replace(old, new, 1)
+
+          index_path.write_text(text, encoding='utf-8')
+
+          tests_path = Path('tests/app.test.cjs')
+          tests = tests_path.read_text(encoding='utf-8')
+          test_block = r'''
+
+test('backs up completed games at any time without exporting the active game', async t => {
+  const app = await createApp();
+  t.after(() => app.dom.window.close());
+
+  const exportButton = app.document.querySelector('header #export-data-btn');
+  assert.ok(exportButton);
+  assert.equal(exportButton.disabled, true);
+
+  addPlayer(app, 'Alice');
+  addPlayer(app, 'Bob');
+  startGame(app);
+  assert.equal(exportButton.disabled, true);
+
+  let inputs = app.document.querySelectorAll('.score-input');
+  inputs[0].value = '0';
+  inputs[1].value = '500';
+  click(app, app.document.querySelector('#add-round-btn'));
+  assert.equal(app.document.body.classList.contains('game-complete'), true);
+  assert.equal(exportButton.disabled, false);
+
+  click(app, app.document.querySelector('#new-game-btn'));
+  click(app, app.document.querySelector('#player-order-continue-btn'));
+  click(app, app.document.querySelector('#dealer-options button'));
+  assert.ok(JSON.parse(app.window.localStorage.getItem('unoTrackerState')).currentGame);
+  assert.equal(exportButton.disabled, false);
+
+  let exportedBlob = null;
+  let downloadName = null;
+  app.window.URL.createObjectURL = blob => {
+    exportedBlob = blob;
+    return 'blob:uno-backup';
+  };
+  app.window.URL.revokeObjectURL = () => {};
+  app.window.HTMLAnchorElement.prototype.click = function() {
+    downloadName = this.download;
+  };
+
+  click(app, exportButton);
+  assert.ok(exportedBlob);
+  assert.match(downloadName, /^uno-game-history-\d{4}-\d{2}-\d{2}\.json$/);
+
+  const exportedText = await new Promise((resolve, reject) => {
+    const reader = new app.window.FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(exportedBlob);
+  });
+  const backup = JSON.parse(exportedText);
+  assert.equal(backup.schemaVersion, 1);
+  assert.equal(backup.games.length, 1);
+  assert.deepEqual(backup.players, ['Alice', 'Bob']);
+  assert.equal(backup.currentGame, null);
+  assert.deepEqual(app.errors, []);
+});
+'''
+          assert "backs up completed games at any time without exporting the active game" not in tests, 'Backup test already exists'
+          tests_path.write_text(tests + test_block, encoding='utf-8')
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate and test
+        run: npm run check
+
+      - name: Commit tested changes
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-completed-history-backup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html tests/app.test.cjs .github/workflows/apply-completed-history-backup.yml
+          git commit -m "Allow completed game history backup anytime"
+          git push
